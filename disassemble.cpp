@@ -69,7 +69,17 @@ int main(int argc, char *argv[]) {
 
     if (args->isHexDumpMode){
         // print the hex dump
-        std::cout << "Hex Dump not yet implemented" << std::endl;
+        std::cout << std::hex << std::setfill('0');
+        for (auto it = rom.begin(); it !=rom.end(); ++it){
+            if ((it - rom.begin()) % 16 == 0) {
+                if (it != rom.begin()){
+                    std::cout << std::endl;
+                }
+                std::cout << std::setw(4) << it - rom.begin() << " ";
+            }
+            std::cout << std::setw(2) << static_cast<int>(*it) << " ";
+        }
+        std::cout << std::endl;
     } else {
         // do the disassembly
         std::cout << "Disassembly not yet implemented." << std::endl;
