@@ -18,6 +18,8 @@
 
 #define DISASSEMBLE_VERSION
 
+const int DISPLAY_WIDTH = 16;
+
 /*
  * Struct holding the arguments retrieved from the command line
  */
@@ -69,16 +71,28 @@ int main(int argc, char *argv[]) {
 
     if (args->isHexDumpMode){
         // print the hex dump
+        char printable[DISPLAY_WIDTH + 1];
+        printable[DISPLAY_WIDTH] = '\0';
+        int printableIndex = 0;
         std::cout << std::hex << std::setfill('0');
         for (auto it = rom.begin(); it !=rom.end(); ++it){
-            if ((it - rom.begin()) % 16 == 0) {
+            if ((it - rom.begin()) % DISPLAY_WIDTH == 0) {
                 if (it != rom.begin()){
+                    std::cout << printable;
                     std::cout << std::endl;
+                    printableIndex = 0;
                 }
                 std::cout << std::setw(4) << it - rom.begin() << " ";
             }
             std::cout << std::setw(2) << static_cast<int>(*it) << " ";
+            if (*it < 32 || *it > 126){
+                printable[printableIndex] = '.';
+            } else {
+                printable[printableIndex] = *it;
+            }
+            ++printableIndex;
         }
+        std::cout << printable;
         std::cout << std::endl;
     } else {
         // do the disassembly
