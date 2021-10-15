@@ -32,3 +32,12 @@ class Memory {
         uint16_t startOffset; // offset to beginning of address range
         std::unique_ptr<std::vector<uint8_t>> contents;
 };
+
+// derived class for space invaders, use to set up rom range and mirroring
+class SpaceInvaderMemory : public Memory {
+    public:
+        SpaceInvaderMemory(std::unique_ptr<std::vector<uint8_t>> code);
+        uint8_t read(uint16_t address) const override;
+        void write(uint8_t word, uint16_t address) override;
+    private:
+};
