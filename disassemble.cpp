@@ -62,8 +62,9 @@ int main(int argc, char *argv[]) {
     romFile.seekg(0, romFile.beg);
 
     // create a buffer and read into it
-    std::vector<uint8_t> tempROM(romLength);
-    romFile.read(reinterpret_cast<char*>(tempROM.data()), romLength);
+    std::unique_ptr<std::vector<uint8_t>> tempROM = 
+        std::make_unique<std::vector<uint8_t>> (romLength);
+    romFile.read(reinterpret_cast<char*>(tempROM->data()), romLength);
     if (romFile.fail()){
         std::cerr << "Error reading file." << std::endl;
         return 1;
@@ -71,10 +72,7 @@ int main(int argc, char *argv[]) {
     romFile.close();
 
     // move buffer into Memory object
-    Memory rom(tempROM.size());
-    for (int i = 0; i < tempROM.size(); ++i) {
-        rom.load(tempROM.at(i), i);
-    }
+    Memory rom(std::move(tempROM));
 
     if (args->isHexDumpMode){
         // print the hex dump
