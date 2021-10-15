@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     }
     romFile.close();
 
-    // copy buffer into Memory object
+    // move buffer into Memory object
     Memory rom(tempROM.size());
     for (int i = 0; i < tempROM.size(); ++i) {
         rom.load(tempROM.at(i), i);

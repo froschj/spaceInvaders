@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <memory>
 
 class Memory {
     public:
@@ -17,6 +18,8 @@ class Memory {
         virtual void load(uint8_t word, uint16_t address); 
         // create a memory holding a number of words
         Memory(int words);
+        // create a memory and load information
+        Memory(std::unique_ptr<std::vector<uint8_t>> data);
         // set offset to first memory cell
         void setStartOffset(uint16_t offset);
         virtual ~Memory();
@@ -27,6 +30,5 @@ class Memory {
     protected:
         int words; // size of memory buffer in words
         uint16_t startOffset; // offset to beginning of address range
-        std::vector<uint8_t> contents;
+        std::unique_ptr<std::vector<uint8_t>> contents;
 };
-
