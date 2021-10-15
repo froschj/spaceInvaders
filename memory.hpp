@@ -3,24 +3,30 @@
  */
 
 #include <vector>
+#include <cstdint>
 
-template <typename addressType, typename wordType>
 class Memory {
     public:
         // return the word at address
-        virtual wordType read(addressType address) const; 
+        virtual uint8_t read(uint16_t address) const; 
         // write word to address, obey write protections
         // models writing to RAM
-        virtual void write(wordType word, addressType address); 
+        virtual void write(uint8_t word, uint16_t address); 
         // write word to address, disegard write protections
         // models "flashing" a ROM
-        virtual void load(wordType word, addressType address); 
+        virtual void load(uint8_t word, uint16_t address); 
         // create a memory holding a number of words
         Memory(int words);
         // set offset to first memory cell
-        void setStartOffset(addressType offset);
+        void setStartOffset(uint16_t offset);
+        virtual ~Memory();
+        // low address of memory
+        uint16_t getLowAddress();
+        // high address of memory
+        uint16_t getHighAddress();
     protected:
         int words; // size of memory buffer in words
-        addressType startOffset; // offset to beginning of address range
-        std::vector<wordType> contents;
+        uint16_t startOffset; // offset to beginning of address range
+        std::vector<uint8_t> contents;
 };
+

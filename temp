@@ -6,4 +6,6 @@ disassemble.o:	disassemble.cpp
 
 memory.o:		memory.cpp
 	g++ -c memory.cpp -std=c++17 
-	
+
+disassemble:	disassemble.cpp memory.cpp
+	g++ disassemble.cpp memory.cpp -I./ -std=c++17 -o disassemble
