@@ -1,9 +1,6 @@
 /*
  * Template class for Memory objects for use in vintage computer emulators
  */
-
-#ifndef MEMORY_HPP
-#define MEMORY_HPP
 #include "memory.hpp"
 #include <cstdint>
 #include <memory>
@@ -48,5 +45,3 @@ uint16_t Memory::getLowAddress() {
 uint16_t Memory::getHighAddress() {
     return (contents->size() - 1) + startOffset;
 }
-
-#endif

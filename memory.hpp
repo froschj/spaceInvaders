@@ -2,6 +2,9 @@
  * Template class for Memory objects for use in vintage computer emulators
  */
 
+#ifndef MEMORY_HPP
+#define MEMORY_HPP
+
 #include <vector>
 #include <cstdint>
 #include <memory>
@@ -41,3 +44,5 @@ class SpaceInvaderMemory : public Memory {
         void write(uint8_t word, uint16_t address) override;
     private:
 };
+
+#endif

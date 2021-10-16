@@ -11,6 +11,8 @@
 #include <cstdint>
 #include <iomanip>
 #include "memory.hpp"
+#include "processor.hpp"
+#include "disassembler.hpp"
 
 #ifdef WINDOWS
 #define TCLAP_NAMESTARTSTRING "~~"
@@ -102,7 +104,7 @@ int main(int argc, char *argv[]) {
     } else {
         // do the disassembly
         std::cout << "Disassembly not yet implemented." << std::endl;
-        
+
     }
 
     //std::cout << "Filename: " << args->romFileName << std::endl;

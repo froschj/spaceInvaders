@@ -23,19 +23,21 @@ struct State {
         }
 };
 
-struct DisassemblerState8080 : State {
-    private:
-        virtual struct DisassemblerState8080* doClone() const {
-            struct DisassemblerState8080 *temp = 
-                new struct DisassemblerState8080;
-                temp->pc = this->pc;
-                return temp;
-        } 
+template<class stateType, class memoryType>
+class Processor {
     public:
-        uint16_t pc;
-        std::unique_ptr<struct DisassemblerState8080> clone() const {
-            return std::unique_ptr<struct DisassemblerState8080>(doClone());
+        virtual void step() = 0;
+        virtual ~Processor();
+        Processor();
+        std::unique_ptr<stateType> getState() const {
+            return state.clone();
         }
+        void connectMemory(memoryType *memoryDevice) {
+            memory = memoryDevice;
+        };
+    protected:
+        stateType state;
+        memoryType *memory;
 };
 
 #endif
