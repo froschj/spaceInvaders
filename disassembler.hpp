@@ -94,9 +94,55 @@ class Disassembler8080 :
         std::map<uint8_t, OpcodePtr> opcodes; // hold opcode lookup table
         std::ostream& outputDevice; // store the selected output
         void buildMap(); // populate the lookup table
+        void currentAddress(); // print the current address
+        void twoByteOperand(const uint16_t startAddress); //print 2 bytes
+        void oneByteOperand(const uint16_t address); //print 1 byte
+        void mnemonic(const std::string mnemonic);
         
         // opcode declarations
         int NOP();
+        int RLC();
+        int RRC();
+        int LXI_H();
+        int SHLD();
+        int INX_H();
+        int DAA();
+        int DCX_H();
+        int STA();
+        int DCR_M();
+        int LDA();
+        int INR_A();
+        int DCR_A();
+        int MVI_A();
+        int MOV_B_M();
+        int MOV_E_A();
+        int MOV_H_M();
+        int MOV_H_A();
+        int MOV_L_A();
+        int MOV_A_M();
+        int ANA_A();
+        int XRA_A();
+        int POP_B();
+        int JNZ();
+        int JMP();
+        int PUSH_B();
+        int ADI();
+        int RET();
+        int JZ();
+        int CALL();
+        int POP_D();
+        int JNC();
+        int PUSH_D();
+        int JC();
+        int IN();
+        int POP_H();
+        int ANI();
+        int PUSH_H();
+        int POP_PSW();
+        int PUSH_PSW();
+        int EI();
+        int CPI();
+        
 };
 
 #endif
