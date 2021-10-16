@@ -9,6 +9,9 @@
 #include <cstdint>
 
 /* https://stackoverflow.com/questions/6924754/return-type-covariance-with-smart-pointers */
+/*
+ * Generic State to derive specific processor states (registers) from
+ */
 struct State {
     private:
         const char *id = "state";
@@ -23,18 +26,22 @@ struct State {
         }
 };
 
+/*
+ * Generic Porcessor class
+ */
 template<class stateType, class memoryType>
 class Processor {
     public:
-        virtual int step() = 0;
+        // execute an instruction, return # of cycles
+        virtual int step() = 0; 
         virtual ~Processor() {}
         Processor() {}
         std::unique_ptr<stateType> getState() const {
             return state.clone();
-        }
+        } // return a copy of the current state
         void connectMemory(memoryType *memoryDevice) {
             memory = memoryDevice;
-        };
+        }; // connect the processor to a memory
     protected:
         stateType state;
         memoryType *memory;

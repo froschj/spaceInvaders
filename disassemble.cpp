@@ -106,10 +106,13 @@ int main(int argc, char *argv[]) {
         Disassembler8080 debug8080(&rom);
         debug8080.reset(0x0000); //start at address 0x0000
         try {
+            // processor will disassemble until the end of memory
             while (debug8080.getState()->pc <= rom.getHighAddress()) {
                 debug8080.step();
             }
         } catch (const std::exception& e) {
+            // processor throws excptions on illegal memory read
+            // and on unknown opcode
             std::cerr << e.what() << std::endl;
         }
 

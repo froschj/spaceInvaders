@@ -1,31 +1,6 @@
 /*
-    public:
-*        virtual void step() = 0;
-*        virtual ~Processor();
-*        Processor();
-*        std::unique_ptr<stateType> getState() const {
-            return state.clone();
-        }
-*        void connectMemory(memoryType *memoryDevice) {
-            memory = memoryDevice;
-        };
-    protected:
-*        stateType state;
-*        memoryType *memory;
-    public:
-*        Disassembler8080();
-*        Disassembler8080(Memory *memoryDevice);
-*        void step() override;
-*        void reset(uint16_t address = 0x0000);
-    private:
-*        typedef int (*OpcodePtr)(void);
-*        uint8_t fetch(uint16_t address); //fetch instruction at address
-*        OpcodePtr decode(uint8_t); //decode an opcode and get its execution
-*        std::map<uint8_t, OpcodePtr> opcodes;
-*        std::ostream &outptDevice;
-        void buildMap();
-
-*/
+ * Implentation of the 8080 Disassembler "pseudoprocessor"
+ */
 
 #include "processor.hpp"
 #include "disassembler.hpp"
@@ -36,6 +11,7 @@
 #include <sstream>
 #include <string>
 
+// Base constructor
 Disassembler8080::Disassembler8080(std::ostream &os) : 
         outputDevice(os) {
     this->memory = nullptr;
@@ -43,6 +19,7 @@ Disassembler8080::Disassembler8080(std::ostream &os) :
     this->buildMap();
 }
 
+// construct with memory attached
 Disassembler8080::Disassembler8080(
         Memory *memoryDevice, 
         std::ostream &os) : 
@@ -52,24 +29,32 @@ Disassembler8080::Disassembler8080(
     this->buildMap();
 }
 
+// empty destructor
 Disassembler8080::~Disassembler8080() {
 
 }
 
+// "execute" an instrution and return # of CPU cycles
 int Disassembler8080::step() {
+    // fetch
     uint8_t opcodeWord = fetch(state.pc);
+    // decode
     OpcodePtr opcodeFunction = decode(opcodeWord);
+    // execute
     return (this->*opcodeFunction)();
 }
 
+// set execution point
 void Disassembler8080::reset(uint16_t address) {
     state.pc = address;
 }
 
+// get contents of a memory address
 uint8_t Disassembler8080::fetch(uint16_t address) {
     try { 
         return memory->read(address);
     } catch (const std::out_of_range& oor) {
+        // convert to a more meaningful exception
         std::stringstream badAddress;
         badAddress << "0x" << std::setw(4) << std::hex << std::setfill('0')
             << static_cast<int>(address);
@@ -78,10 +63,12 @@ uint8_t Disassembler8080::fetch(uint16_t address) {
     }
 }
 
+// get the host code to run for a given opcode (word)
 Disassembler8080::OpcodePtr Disassembler8080::decode(uint8_t word) {
     try {
         return opcodes.at(word);
     } catch (const std::out_of_range& oor) {
+        //convert to a more meaningful exception
         std::stringstream badAddress;
         std::stringstream badOpcode;
         badAddress << "0x" << std::setw(4) << std::hex << std::setfill('0') 
@@ -95,16 +82,23 @@ Disassembler8080::OpcodePtr Disassembler8080::decode(uint8_t word) {
     }
 }
 
+// load opcode lookup table
+void Disassembler8080::buildMap(){
+    opcodes.insert({0x00, &Disassembler8080::NOP});
+}
+
+/*
+ * Opcode functions
+ */
+
+// disassemble the NOP opcode
 int Disassembler8080::NOP() {
-    
     outputDevice << "0x" << std::setw(4) << std::hex << std::setfill('0')
         << static_cast<int>(state.pc);
     outputDevice << " NOP" << std::endl;
     ++state.pc;
-    return 1;
+    return 1; // irrelevant for disassembler
 }
 
-void Disassembler8080::buildMap(){
-    opcodes.insert({0x00, &Disassembler8080::NOP});
-}
+
 
