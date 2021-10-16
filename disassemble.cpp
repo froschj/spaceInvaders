@@ -103,7 +103,15 @@ int main(int argc, char *argv[]) {
         std::cout << std::endl;
     } else {
         // do the disassembly
-        std::cout << "Disassembly not yet implemented." << std::endl;
+        Disassembler8080 debug8080(&rom);
+        debug8080.reset(0x0000); //start at address 0x0000
+        try {
+            while (debug8080.getState()->pc <= rom.getHighAddress()) {
+                debug8080.step();
+            }
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+        }
 
     }
 

@@ -29,7 +29,7 @@ struct DisassemblerState8080 : State {
         uint16_t pc;
 };
 
-class MemoryReadError : std::exception {
+class MemoryReadError : public std::exception {
     private:
         std::string msg;
     public:
@@ -40,7 +40,7 @@ class MemoryReadError : std::exception {
         }
 };
 
-class UnimplememntedInstructionError : std::exception {
+class UnimplememntedInstructionError : public std::exception {
     private:
         std::string msg;
     public:
@@ -64,15 +64,16 @@ class Disassembler8080 :
         Disassembler8080(std::ostream &os = std::cout);
         Disassembler8080(Memory *memoryDevice, std::ostream &os = std::cout);
         ~Disassembler8080();
-        void step() override;
+        int step() override;
         void reset(uint16_t address = 0x0000);
     private:
-        typedef int (*OpcodePtr)(void);
+        typedef int (Disassembler8080::*OpcodePtr)(void);
         uint8_t fetch(uint16_t address); //fetch instruction at address
         OpcodePtr decode(uint8_t); //decode an opcode and get its execution
         std::map<uint8_t, OpcodePtr> opcodes;
         std::ostream& outputDevice;
         void buildMap();
+        int NOP();
 };
 
 #endif

@@ -26,9 +26,9 @@ struct State {
 template<class stateType, class memoryType>
 class Processor {
     public:
-        virtual void step() = 0;
-        virtual ~Processor();
-        Processor();
+        virtual int step() = 0;
+        virtual ~Processor() {}
+        Processor() {}
         std::unique_ptr<stateType> getState() const {
             return state.clone();
         }

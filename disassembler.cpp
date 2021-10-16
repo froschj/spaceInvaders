@@ -27,6 +27,7 @@
 
 */
 
+#include "processor.hpp"
 #include "disassembler.hpp"
 #include <iostream>
 #include <exception>
@@ -35,7 +36,7 @@
 #include <sstream>
 #include <string>
 
-Disassembler8080::Disassembler8080(std::ostream &os = std::cout) : 
+Disassembler8080::Disassembler8080(std::ostream &os) : 
         outputDevice(os) {
     this->memory = nullptr;
     this->reset(0x0000);
@@ -44,20 +45,24 @@ Disassembler8080::Disassembler8080(std::ostream &os = std::cout) :
 
 Disassembler8080::Disassembler8080(
         Memory *memoryDevice, 
-        std::ostream &os = std::cout) : 
+        std::ostream &os) : 
         outputDevice(os) {
     memory = memoryDevice;
     this->reset(0x0000);
     this->buildMap();
 }
 
-void Disassembler8080::step() {
-    uint8_t opcodeWord = fetch(state.pc);
-    OpcodePtr opcodeFunction = decode(opcodeWord);
-    opcodeFunction();
+Disassembler8080::~Disassembler8080() {
+
 }
 
-void Disassembler8080::reset(uint16_t address = 0x0000) {
+int Disassembler8080::step() {
+    uint8_t opcodeWord = fetch(state.pc);
+    OpcodePtr opcodeFunction = decode(opcodeWord);
+    return (this->*opcodeFunction)();
+}
+
+void Disassembler8080::reset(uint16_t address) {
     state.pc = address;
 }
 
@@ -66,7 +71,8 @@ uint8_t Disassembler8080::fetch(uint16_t address) {
         return memory->read(address);
     } catch (const std::out_of_range& oor) {
         std::stringstream badAddress;
-        badAddress << "0x" << std::hex << static_cast<int>(address);
+        badAddress << "0x" << std::setw(4) << std::hex << std::setfill('0')
+            << static_cast<int>(address);
         std::string message(badAddress.str());
         throw MemoryReadError(message);
     }
@@ -78,11 +84,27 @@ Disassembler8080::OpcodePtr Disassembler8080::decode(uint8_t word) {
     } catch (const std::out_of_range& oor) {
         std::stringstream badAddress;
         std::stringstream badOpcode;
-        badAddress << "0x" << std::hex << static_cast<int>(state.pc);
-        badOpcode << "0x" << std::hex << static_cast<int>(word);
+        badAddress << "0x" << std::setw(4) << std::hex << std::setfill('0') 
+            << static_cast<int>(state.pc);
+        badOpcode << "0x" << std::setw(2) << std::hex << std::setfill('0') 
+            << static_cast<int>(word);
         throw UnimplememntedInstructionError(
             badAddress.str(),
             badOpcode.str()
         );
     }
 }
+
+int Disassembler8080::NOP() {
+    
+    outputDevice << "0x" << std::setw(4) << std::hex << std::setfill('0')
+        << static_cast<int>(state.pc);
+    outputDevice << " NOP" << std::endl;
+    ++state.pc;
+    return 1;
+}
+
+void Disassembler8080::buildMap(){
+    opcodes.insert({0x00, &Disassembler8080::NOP});
+}
+
