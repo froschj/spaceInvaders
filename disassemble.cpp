@@ -114,6 +114,7 @@ int main(int argc, char *argv[]) {
             // processor throws excptions on illegal memory read
             // and on unknown opcode
             std::cerr << e.what() << std::endl;
+            return 1;
         }
 
     }
