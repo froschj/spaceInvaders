@@ -10,6 +10,7 @@
 #include <fstream>
 #include <cstdint>
 #include <iomanip>
+#include "memory.hpp"
 
 #ifdef WINDOWS
 #define TCLAP_NAMESTARTSTRING "~~"
@@ -61,13 +62,17 @@ int main(int argc, char *argv[]) {
     romFile.seekg(0, romFile.beg);
 
     // create a buffer and read into it
-    std::vector<uint8_t> rom(romLength);
-    romFile.read(reinterpret_cast<char*>(rom.data()), romLength);
+    std::unique_ptr<std::vector<uint8_t>> tempROM = 
+        std::make_unique<std::vector<uint8_t>> (romLength);
+    romFile.read(reinterpret_cast<char*>(tempROM->data()), romLength);
     if (romFile.fail()){
         std::cerr << "Error reading file." << std::endl;
         return 1;
     }
     romFile.close();
+
+    // move buffer into Memory object
+    Memory rom(std::move(tempROM));
 
     if (args->isHexDumpMode){
         // print the hex dump
@@ -75,20 +80,20 @@ int main(int argc, char *argv[]) {
         printable[DISPLAY_WIDTH] = '\0';
         int printableIndex = 0;
         std::cout << std::hex << std::setfill('0');
-        for (auto it = rom.begin(); it !=rom.end(); ++it){
-            if ((it - rom.begin()) % DISPLAY_WIDTH == 0) {
-                if (it != rom.begin()){
+        for (int i = rom.getLowAddress(); i <= rom.getHighAddress(); ++i){
+            if (i % DISPLAY_WIDTH == 0) {
+                if (i != 0){
                     std::cout << printable;
                     std::cout << std::endl;
                     printableIndex = 0;
                 }
-                std::cout << std::setw(4) << it - rom.begin() << " ";
+                std::cout << std::setw(4) << i << " ";
             }
-            std::cout << std::setw(2) << static_cast<int>(*it) << " ";
-            if (*it < 32 || *it > 126){
+            std::cout << std::setw(2) << static_cast<int>(rom.read(i)) << " ";
+            if (rom.read(i) < 32 || rom.read(i) > 126){
                 printable[printableIndex] = '.';
             } else {
-                printable[printableIndex] = *it;
+                printable[printableIndex] = rom.read(i);
             }
             ++printableIndex;
         }
@@ -97,6 +102,7 @@ int main(int argc, char *argv[]) {
     } else {
         // do the disassembly
         std::cout << "Disassembly not yet implemented." << std::endl;
+        
     }
 
     //std::cout << "Filename: " << args->romFileName << std::endl;
