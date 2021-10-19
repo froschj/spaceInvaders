@@ -7,6 +7,46 @@
 
 #include <memory>
 #include <cstdint>
+#include <exception>
+#include <string>
+
+
+/*
+ * A meaningful exception to throw if there is an out-of-bounds 
+ * memory read by the "processor"
+ */
+class MemoryReadError : public std::exception {
+    private:
+        std::string msg;
+    public:
+        MemoryReadError(const std::string& address) : 
+                msg(std::string("Invalid read at address: ") + address){}
+        virtual const char *what() const throw() {
+            return msg.c_str();
+        }
+};
+
+/*
+ * A meaningful exception to throw if the "processor" encounters an
+ * unknown or unimplemented opcode
+ */
+class UnimplememntedInstructionError : public std::exception {
+    private:
+        std::string msg;
+    public:
+        UnimplememntedInstructionError(
+                const std::string& address,
+                const std::string& opcode 
+        ) : 
+                msg(
+                    std::string("Invalid opcode ") 
+                    + opcode + 
+                    std::string(" at address: ") 
+                    + address){}
+        virtual const char *what() const throw() {
+            return msg.c_str();
+        }
+};
 
 /* https://stackoverflow.com/questions/6924754/return-type-covariance-with-smart-pointers */
 /*

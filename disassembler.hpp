@@ -11,7 +11,6 @@
 #include <ostream>
 #include <map>
 #include <iostream>
-#include <exception>
 #include <string>
 
 /*
@@ -31,44 +30,6 @@ struct DisassemblerState8080 : State {
             return std::unique_ptr<struct DisassemblerState8080>(doClone());
         }
         uint16_t pc;
-};
-
-
-/*
- * A meaningful exception to throw if there is an out-of-bounds 
- * memory read by the "processor"
- */
-class MemoryReadError : public std::exception {
-    private:
-        std::string msg;
-    public:
-        MemoryReadError(const std::string& address) : 
-                msg(std::string("Invalid read at address: ") + address){}
-        virtual const char *what() const throw() {
-            return msg.c_str();
-        }
-};
-
-/*
- * A meaningful exception to throw if the "processor" encounters an
- * unknown or unimplemented opcode
- */
-class UnimplememntedInstructionError : public std::exception {
-    private:
-        std::string msg;
-    public:
-        UnimplememntedInstructionError(
-                const std::string& address,
-                const std::string& opcode 
-        ) : 
-                msg(
-                    std::string("Invalid opcode ") 
-                    + opcode + 
-                    std::string(" at address: ") 
-                    + address){}
-        virtual const char *what() const throw() {
-            return msg.c_str();
-        }
 };
 
 /*
@@ -101,6 +62,10 @@ class Disassembler8080 :
         // print a sequence of words starting from address
         void instructionBytes(const uint16_t address, const int words);
         
+        // catchall for illegal opcodes (probably strings/values in code)
+        int illegal();  //0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38, 
+                        //0xcb, 0xd9, 0xdd, 0xed, 0xfd
+
         // opcode declarations
         int NOP();      //0x00
         int LXI_B();    //0x01
