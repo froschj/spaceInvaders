@@ -1471,7 +1471,7 @@ int Disassembler8080::MOV_D_C() {
     return 5;
 }
 
-//disassemble the MOV D,C opcode
+//disassemble the MOV D,D opcode
 int Disassembler8080::MOV_D_D() {
     instructionBytes(state.pc, 1);
     mnemonic("MOV");
@@ -1523,7 +1523,7 @@ int Disassembler8080::MOV_D_M() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the MOV D,A opcode
@@ -1611,7 +1611,7 @@ int Disassembler8080::MOV_E_M() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the MOV E,A opcode
@@ -1633,7 +1633,7 @@ int Disassembler8080::MOV_H_B() {
 
     ++state.pc; // advance the pc correctly
 
-    return 7;
+    return 5;
 }
 
 //disassemble the MOV H,C opcode
@@ -1645,7 +1645,7 @@ int Disassembler8080::MOV_H_C() {
     ++state.pc; // advance the pc correctly
 
 
-    return 7;
+    return 5;
 }
 
 //disassemble the MOV H,D opcode
@@ -1656,7 +1656,7 @@ int Disassembler8080::MOV_H_D() {
 
     ++state.pc; // advance the pc correctly
 
-    return 7;
+    return 5;
 }
 
 //disassemble the MOV H,E opcode
@@ -1667,7 +1667,7 @@ int Disassembler8080::MOV_H_E() {
 
     ++state.pc; // advance the pc correctly
 
-    return 7;
+    return 5;
 }
 
 //disassemble the MOV H,H opcode
@@ -1678,7 +1678,7 @@ int Disassembler8080::MOV_H_H() {
 
     ++state.pc; // advance the pc correctly
 
-    return 7;
+    return 5;
 }
 
 //disassemble the MOV H,L opcode
@@ -1689,7 +1689,7 @@ int Disassembler8080::MOV_H_L() {
 
     ++state.pc; // advance the pc correctly
 
-    return 7;
+    return 5;
 }
 
 //disassemble the MOV H,M opcode
@@ -1714,6 +1714,7 @@ int Disassembler8080::MOV_H_A() {
     return 5;
 }
 
+//disassemble the MOV L,B opcode
 int Disassembler8080::MOV_L_B() {
     instructionBytes(state.pc, 1);
     mnemonic("MOV");
@@ -1724,6 +1725,7 @@ int Disassembler8080::MOV_L_B() {
     return 5;
 }
 
+//disassemble the MOV L,C opcode
 int Disassembler8080::MOV_L_C() {
     instructionBytes(state.pc, 1);
     mnemonic("MOV");
@@ -1734,6 +1736,7 @@ int Disassembler8080::MOV_L_C() {
     return 5;
 }
 
+//disassemble the MOV L,D opcode
 int Disassembler8080::MOV_L_D() {
     instructionBytes(state.pc, 1);
     mnemonic("MOV");
@@ -1744,6 +1747,7 @@ int Disassembler8080::MOV_L_D() {
     return 5;
 }
 
+//disassemble the MOV L,E opcode
 int Disassembler8080::MOV_L_E() {
     instructionBytes(state.pc, 1);
     mnemonic("MOV");
@@ -1754,6 +1758,7 @@ int Disassembler8080::MOV_L_E() {
     return 5;
 }
 
+//disassemble the MOV L,H opcode
 int Disassembler8080::MOV_L_H() {
     instructionBytes(state.pc, 1);
     mnemonic("MOV");
@@ -1764,6 +1769,7 @@ int Disassembler8080::MOV_L_H() {
     return 5;
 }
 
+//disassemble the MOV L,L opcode
 int Disassembler8080::MOV_L_L() {
     instructionBytes(state.pc, 1);
     mnemonic("MOV");
@@ -1781,7 +1787,7 @@ int Disassembler8080::MOV_L_M() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the MOV L,A opcode
@@ -1795,8 +1801,6 @@ int Disassembler8080::MOV_L_A() {
     return 5;
 }
 
-
-
 //disassemble the MOV M,B opcode
 int Disassembler8080::MOV_M_B() {
     instructionBytes(state.pc, 1);
@@ -1805,7 +1809,7 @@ int Disassembler8080::MOV_M_B() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the MOV M,C opcode
@@ -1816,7 +1820,7 @@ int Disassembler8080::MOV_M_C() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the MOV M,D opcode
@@ -1827,7 +1831,7 @@ int Disassembler8080::MOV_M_D() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the MOV M,E opcode
@@ -1838,7 +1842,7 @@ int Disassembler8080::MOV_M_E() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the MOV M,H opcode
@@ -1849,7 +1853,7 @@ int Disassembler8080::MOV_M_H() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the MOV M,L opcode
@@ -1860,7 +1864,7 @@ int Disassembler8080::MOV_M_L() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the HLT opcode
@@ -1871,7 +1875,7 @@ int Disassembler8080::HLT() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the MOV M,A opcode
@@ -1882,7 +1886,7 @@ int Disassembler8080::MOV_M_A() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the MOV A,B opcode
@@ -1896,7 +1900,7 @@ int Disassembler8080::MOV_A_B() {
     return 5;
 }
 
-//disassemble the MOV A,D opcode
+//disassemble the MOV A,C opcode
 int Disassembler8080::MOV_A_C() {
     instructionBytes(state.pc, 1);
     mnemonic("MOV");
@@ -2047,7 +2051,7 @@ int Disassembler8080::ADD_M() {
 
     ++state.pc; // advance the pc correctly
 
-    return 4;
+    return 7;
 }
 
 //disassemble the ADD_A opcode
@@ -2135,7 +2139,7 @@ int Disassembler8080::ADC_M() {
 
     ++state.pc; // advance the pc correctly
 
-    return 4;
+    return 7;
 }
 
 //disassemble the ADC_A opcode
@@ -2186,7 +2190,7 @@ int Disassembler8080::SUB_D() {
 int Disassembler8080::SUB_E() {
     instructionBytes(state.pc, 1);
     mnemonic("SUB");    
-    outputDevice << "D" << std::endl;
+    outputDevice << "E" << std::endl;
 
     ++state.pc; // advance the pc correctly
 
@@ -2223,7 +2227,7 @@ int Disassembler8080::SUB_M() {
 
     ++state.pc; // advance the pc correctly
 
-    return 4;
+    return 7;
 }
 
 //disassemble the SUB A opcode
@@ -2311,7 +2315,7 @@ int Disassembler8080::SBB_M() {
 
     ++state.pc; // advance the pc correctly
 
-    return 4;
+    return 7;
 }
 
 //disassemble the SBB A opcode
@@ -2399,7 +2403,7 @@ int Disassembler8080::ANA_M() {
 
     ++state.pc; // advance the pc correctly
 
-    return 4;
+    return 7;
 }
 
 //disassemble the ANA A opcode
@@ -2487,7 +2491,7 @@ int Disassembler8080::XRA_M() {
 
     ++state.pc; // advance the pc correctly
 
-    return 4;
+    return 7;
 }
 
 //disassemble the XRA A opcode
@@ -2509,7 +2513,7 @@ int Disassembler8080::ORA_B() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the ORA C opcode
@@ -2520,7 +2524,7 @@ int Disassembler8080::ORA_C() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the ORA D opcode
@@ -2531,7 +2535,7 @@ int Disassembler8080::ORA_D() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the ORA E opcode
@@ -2542,7 +2546,7 @@ int Disassembler8080::ORA_E() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the ORA H opcode
@@ -2553,7 +2557,7 @@ int Disassembler8080::ORA_H() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the ORA L opcode
@@ -2564,7 +2568,7 @@ int Disassembler8080::ORA_L() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the ORA M opcode
@@ -2575,7 +2579,7 @@ int Disassembler8080::ORA_M() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
 //disassemble the ORA A opcode
@@ -2586,7 +2590,7 @@ int Disassembler8080::ORA_A() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the CMP B opcode
@@ -2597,7 +2601,7 @@ int Disassembler8080::CMP_B() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the CMP C opcode
@@ -2608,7 +2612,7 @@ int Disassembler8080::CMP_C() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the CMP D opcode
@@ -2619,7 +2623,7 @@ int Disassembler8080::CMP_D() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the CMP E opcode
@@ -2630,10 +2634,10 @@ int Disassembler8080::CMP_E() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
-//disassemble the CMP B opcode
+//disassemble the CMP H opcode
 int Disassembler8080::CMP_H() {
     instructionBytes(state.pc, 1);
     mnemonic("CMP");
@@ -2641,7 +2645,7 @@ int Disassembler8080::CMP_H() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the CMP L opcode
@@ -2652,7 +2656,7 @@ int Disassembler8080::CMP_L() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 //disassemble the CMP M opcode
@@ -2663,10 +2667,10 @@ int Disassembler8080::CMP_M() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
-//disassemble the CMP M opcode
+//disassemble the CMP A opcode
 int Disassembler8080::CMP_A() {
     instructionBytes(state.pc, 1);
     mnemonic("CMP");
@@ -2674,7 +2678,7 @@ int Disassembler8080::CMP_A() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
 // disassemble the RNZ opcode
@@ -2685,7 +2689,7 @@ int Disassembler8080::RNZ() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 5; // or 11; irrelevant for disassembler
 }
 
 //disassemble the POP B opcode
@@ -2735,7 +2739,7 @@ int Disassembler8080::CNZ() {
 
     state.pc += 3; // advance the pc correctly
 
-    return 17;
+    return 17; // or 11; irrelevant for disassembler
 }
 
 //disassemble the PUSH B opcode
@@ -2770,10 +2774,10 @@ int Disassembler8080::RST_0() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 11; 
 }
 
-// disassemble the NOP opcode
+// disassemble the RZ opcode
 int Disassembler8080::RZ() {
     instructionBytes(state.pc, 1);
     mnemonic("RZ");
@@ -2781,7 +2785,7 @@ int Disassembler8080::RZ() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 5; // or 11; irrelevant for disassembler
 }
 
 // disassemble the RET opcode
@@ -2792,7 +2796,7 @@ int Disassembler8080::RET() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 10; // irrelevant for disassembler
 }
 
 //disassemble the JZ opcode
@@ -2818,7 +2822,7 @@ int Disassembler8080::CZ() {
 
     state.pc += 3; // advance the pc correctly
 
-    return 17;
+    return 17; // or 11; irrelevant for disassembler
 }
 
 //disassemble the CALL opcode
@@ -2855,7 +2859,7 @@ int Disassembler8080::RST_1() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 11; 
 }
 
 // disassemble the RNC opcode
@@ -2866,7 +2870,7 @@ int Disassembler8080::RNC() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 5; // or 11; irrelevant for disassembler
 }
 
 //disassemble the POP D opcode
@@ -2916,7 +2920,7 @@ int Disassembler8080::CNC() {
 
     state.pc += 3; // advance the pc correctly
 
-    return 10;
+    return 11; // or 11; irrelevant for disassembler
 }
 
 //disassemble the PUSH D opcode
@@ -2951,7 +2955,7 @@ int Disassembler8080::RST_2() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 11; 
 }
 
 //disassemble the RC opcode
@@ -2962,7 +2966,7 @@ int Disassembler8080::RC() {
     
     ++state.pc; // advance the pc correctly
 
-    return 11;
+    return 5; // or 11; irrelevant for disassembler
 }
 
 //disassemble the JC opcode
@@ -3001,7 +3005,7 @@ int Disassembler8080::CC() {
 
     state.pc += 3; // advance the pc correctly
 
-    return 17;
+    return 17; // or 11; irrelevant for disassembler
 }
 
 //disassemble the SBI opcode
@@ -3025,10 +3029,10 @@ int Disassembler8080::RST_3() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 11; // irrelevant for disassembler
 }
 
-//disassemble the POP H opcode
+//disassemble the RPO opcode
 int Disassembler8080::RPO() {
     instructionBytes(state.pc, 1);
     mnemonic("RPO");
@@ -3036,7 +3040,7 @@ int Disassembler8080::RPO() {
     
     ++state.pc; // advance the pc correctly
 
-    return 10;
+    return 5; // or 11; irrelevant for disassembler
 }
 
 //disassemble the POP H opcode
@@ -3071,7 +3075,7 @@ int Disassembler8080::XTHL() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 18; // irrelevant for disassembler
 }
 
 //disassemble the CPO opcode
@@ -3084,7 +3088,7 @@ int Disassembler8080::CPO() {
 
     state.pc += 3; // advance the pc correctly
 
-    return 17;
+    return 17; // or 11; irrelevant for disassembler
 }
 
 //disassemble the PUSH H opcode
@@ -3119,7 +3123,7 @@ int Disassembler8080::RST_4() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 11; // irrelevant for disassembler
 }
 
 // disassemble the RPE opcode
@@ -3130,7 +3134,7 @@ int Disassembler8080::RPE() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 5; // or 11; irrelevant for disassembler
 }
 
 // disassemble the PCHL opcode
@@ -3141,7 +3145,7 @@ int Disassembler8080::PCHL() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 5; 
 }
 
 //disassemble the JPE opcode
@@ -3178,7 +3182,7 @@ int Disassembler8080::CPE() {
 
     state.pc += 3; // advance the pc correctly
 
-    return 10;
+    return 17; // or 11; irrelevant for disassembler
 }
 
 //disassemble the XRI opcode
@@ -3202,10 +3206,10 @@ int Disassembler8080::RST_5() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 11; // irrelevant for disassembler
 }
 
-// disassemble the NOP opcode
+// disassemble the RP opcode
 int Disassembler8080::RP() {
     instructionBytes(state.pc, 1);
     mnemonic("RP");
@@ -3213,7 +3217,7 @@ int Disassembler8080::RP() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 5; // or 11; irrelevant for disassembler
 }
 
 //disassemble the POP PSW opcode
@@ -3261,7 +3265,7 @@ int Disassembler8080::CP() {
 
     state.pc += 3; // advance the pc correctly
 
-    return 10;
+    return 17; // or 11; irrelevant for disassembler
 }
 
 //disassemble the PUSH PSW opcode
@@ -3296,7 +3300,7 @@ int Disassembler8080::RST_6() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 11; // irrelevant for disassembler
 }
 
 // disassemble the RM opcode
@@ -3307,7 +3311,7 @@ int Disassembler8080::RM() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 5; // or 11; irrelevant for disassembler
 }
 
 // disassemble the SPHL opcode
@@ -3318,7 +3322,7 @@ int Disassembler8080::SPHL() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 5; // irrelevant for disassembler
 }
 
 //disassemble the JM opcode
@@ -3355,7 +3359,7 @@ int Disassembler8080::CM() {
 
     state.pc += 3; // advance the pc correctly
 
-    return 10;
+    return 17; // or 11; irrelevant for disassembler
 }
 
 //disassemble the CPI opcode
@@ -3379,5 +3383,5 @@ int Disassembler8080::RST_7() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 11; // irrelevant for disassembler
 }
