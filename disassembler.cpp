@@ -356,6 +356,7 @@ void Disassembler8080::buildMap(){
     opcodes.insert({0xbc, &Disassembler8080::CMP_H});
     opcodes.insert({0xbd, &Disassembler8080::CMP_L});
     opcodes.insert({0xbe, &Disassembler8080::CMP_M});
+    opcodes.insert({0xbf, &Disassembler8080::CMP_A}); //not used yet
 
     opcodes.insert({0xc0, &Disassembler8080::RNZ});
     opcodes.insert({0xc1, &Disassembler8080::POP_B});
@@ -364,12 +365,15 @@ void Disassembler8080::buildMap(){
     opcodes.insert({0xc4, &Disassembler8080::CNZ});
     opcodes.insert({0xc5, &Disassembler8080::PUSH_B});
     opcodes.insert({0xc6, &Disassembler8080::ADI});
+    opcodes.insert({0xc7, &Disassembler8080::RST_0}); //not used yet
     opcodes.insert({0xc8, &Disassembler8080::RZ});
     opcodes.insert({0xc9, &Disassembler8080::RET});
     opcodes.insert({0xca, &Disassembler8080::JZ});
+    opcodes.insert({0xcb, &Disassembler8080::illegal});
     opcodes.insert({0xcc, &Disassembler8080::CZ});
     opcodes.insert({0xcd, &Disassembler8080::CALL});
     opcodes.insert({0xce, &Disassembler8080::ACI});
+    opcodes.insert({0xcf, &Disassembler8080::RST_1}); //not used yet
 
     opcodes.insert({0xd0, &Disassembler8080::RNC});
     opcodes.insert({0xd1, &Disassembler8080::POP_D});
@@ -378,11 +382,15 @@ void Disassembler8080::buildMap(){
     opcodes.insert({0xd4, &Disassembler8080::CNC});
     opcodes.insert({0xd5, &Disassembler8080::PUSH_D});
     opcodes.insert({0xd6, &Disassembler8080::SUI});
+    opcodes.insert({0xd7, &Disassembler8080::RST_2}); //not used yet
     opcodes.insert({0xd8, &Disassembler8080::RC});
+    opcodes.insert({0xd9, &Disassembler8080::illegal});
     opcodes.insert({0xda, &Disassembler8080::JC});
     opcodes.insert({0xdb, &Disassembler8080::IN});
     opcodes.insert({0xdc, &Disassembler8080::CC});
+    opcodes.insert({0xdd, &Disassembler8080::illegal});
     opcodes.insert({0xde, &Disassembler8080::SBI});
+    opcodes.insert({0xdf, &Disassembler8080::RST_3}); //not used yet
 
     opcodes.insert({0xe0, &Disassembler8080::RPO});
     opcodes.insert({0xe1, &Disassembler8080::POP_H});
@@ -391,24 +399,30 @@ void Disassembler8080::buildMap(){
     opcodes.insert({0xe4, &Disassembler8080::CPO});
     opcodes.insert({0xe5, &Disassembler8080::PUSH_H});
     opcodes.insert({0xe6, &Disassembler8080::ANI});
+    opcodes.insert({0xe7, &Disassembler8080::RST_4}); //not used yet
     opcodes.insert({0xe8, &Disassembler8080::RPE});
     opcodes.insert({0xe9, &Disassembler8080::PCHL});
     opcodes.insert({0xea, &Disassembler8080::JPE});
     opcodes.insert({0xeb, &Disassembler8080::XCHG});
     opcodes.insert({0xec, &Disassembler8080::CPE});
+    opcodes.insert({0xed, &Disassembler8080::illegal});
     opcodes.insert({0xee, &Disassembler8080::XRI});
+    opcodes.insert({0xef, &Disassembler8080::RST_5}); //not used yet
 
     opcodes.insert({0xf0, &Disassembler8080::RP});
     opcodes.insert({0xf1, &Disassembler8080::POP_PSW});
     opcodes.insert({0xf2, &Disassembler8080::JP});
+    opcodes.insert({0xf3, &Disassembler8080::DI}); //not used yet
     opcodes.insert({0xf4, &Disassembler8080::CP});
     opcodes.insert({0xf5, &Disassembler8080::PUSH_PSW});
     opcodes.insert({0xf6, &Disassembler8080::ORI});
+    opcodes.insert({0xf7, &Disassembler8080::RST_6}); //not used yet
     opcodes.insert({0xf8, &Disassembler8080::RM});
     opcodes.insert({0xf9, &Disassembler8080::SPHL});
     opcodes.insert({0xfa, &Disassembler8080::JM});
     opcodes.insert({0xfb, &Disassembler8080::EI});
     opcodes.insert({0xfc, &Disassembler8080::CM});
+    opcodes.insert({0xfd, &Disassembler8080::illegal});
     opcodes.insert({0xfe, &Disassembler8080::CPI});
     opcodes.insert({0xff, &Disassembler8080::RST_7});
 }
@@ -2482,6 +2496,17 @@ int Disassembler8080::CMP_M() {
     return 5;
 }
 
+//disassemble the CMP M opcode
+int Disassembler8080::CMP_A() {
+    instructionBytes(state.pc, 1);
+    mnemonic("CMP");
+    outputDevice << "A" << std::endl;
+
+    ++state.pc; // advance the pc correctly
+
+    return 5;
+}
+
 // disassemble the RNZ opcode
 int Disassembler8080::RNZ() {
     instructionBytes(state.pc, 1);
@@ -2567,6 +2592,17 @@ int Disassembler8080::ADI() {
     return 7;
 }
 
+// disassemble the RST opcode
+int Disassembler8080::RST_0() {
+    instructionBytes(state.pc, 1);
+    mnemonic("RST");
+    outputDevice << "0" << std::endl;
+
+    ++state.pc;
+
+    return 4; // irrelevant for disassembler
+}
+
 // disassemble the NOP opcode
 int Disassembler8080::RZ() {
     instructionBytes(state.pc, 1);
@@ -2639,6 +2675,17 @@ int Disassembler8080::ACI() {
     state.pc += 2; // advance the pc correctly
 
     return 7;
+}
+
+// disassemble the RST opcode
+int Disassembler8080::RST_1() {
+    instructionBytes(state.pc, 1);
+    mnemonic("RST");
+    outputDevice << "1" << std::endl;
+
+    ++state.pc;
+
+    return 4; // irrelevant for disassembler
 }
 
 // disassemble the RNC opcode
@@ -2726,6 +2773,17 @@ int Disassembler8080::SUI() {
     return 7;
 }
 
+// disassemble the RST opcode
+int Disassembler8080::RST_2() {
+    instructionBytes(state.pc, 1);
+    mnemonic("RST");
+    outputDevice << "2" << std::endl;
+
+    ++state.pc;
+
+    return 4; // irrelevant for disassembler
+}
+
 //disassemble the RC opcode
 int Disassembler8080::RC() {
     instructionBytes(state.pc, 1);
@@ -2787,6 +2845,17 @@ int Disassembler8080::SBI() {
     state.pc += 2; // advance the pc correctly
 
     return 7;
+}
+
+// disassemble the RST opcode
+int Disassembler8080::RST_3() {
+    instructionBytes(state.pc, 1);
+    mnemonic("RST");
+    outputDevice << "3" << std::endl;
+
+    ++state.pc;
+
+    return 4; // irrelevant for disassembler
 }
 
 //disassemble the POP H opcode
@@ -2872,6 +2941,17 @@ int Disassembler8080::ANI() {
     return 7;
 }
 
+// disassemble the RST opcode
+int Disassembler8080::RST_4() {
+    instructionBytes(state.pc, 1);
+    mnemonic("RST");
+    outputDevice << "4" << std::endl;
+
+    ++state.pc;
+
+    return 4; // irrelevant for disassembler
+}
+
 // disassemble the RPE opcode
 int Disassembler8080::RPE() {
     instructionBytes(state.pc, 1);
@@ -2944,6 +3024,17 @@ int Disassembler8080::XRI() {
     return 7;
 }
 
+// disassemble the RST opcode
+int Disassembler8080::RST_5() {
+    instructionBytes(state.pc, 1);
+    mnemonic("RST");
+    outputDevice << "5" << std::endl;
+
+    ++state.pc;
+
+    return 4; // irrelevant for disassembler
+}
+
 // disassemble the NOP opcode
 int Disassembler8080::RP() {
     instructionBytes(state.pc, 1);
@@ -2979,7 +3070,18 @@ int Disassembler8080::JP() {
     return 10;
 }
 
-//disassemble the JP opcode
+// disassemble the DI opcode
+int Disassembler8080::DI() {
+    instructionBytes(state.pc, 1);
+    mnemonic("DI");
+    outputDevice << std::endl;
+
+    ++state.pc;
+
+    return 4; // irrelevant for disassembler
+}
+
+//disassemble the CP opcode
 int Disassembler8080::CP() {
     instructionBytes(state.pc, 3);
     mnemonic("CP");
@@ -3014,6 +3116,17 @@ int Disassembler8080::ORI() {
     state.pc += 2; // advance the pc correctly
 
     return 7;
+}
+
+// disassemble the RST opcode
+int Disassembler8080::RST_6() {
+    instructionBytes(state.pc, 1);
+    mnemonic("RST");
+    outputDevice << "6" << std::endl;
+
+    ++state.pc;
+
+    return 4; // irrelevant for disassembler
 }
 
 // disassemble the RM opcode
@@ -3091,8 +3204,8 @@ int Disassembler8080::CPI() {
 // disassemble the RST opcode
 int Disassembler8080::RST_7() {
     instructionBytes(state.pc, 1);
-    mnemonic("RST7");
-    outputDevice << std::endl;
+    mnemonic("RST");
+    outputDevice << "7" << std::endl;
 
     ++state.pc;
 
