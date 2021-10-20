@@ -432,6 +432,8 @@ void Disassembler8080::buildMap(){
  */
 
 // disassemble illegal opcodes
+// 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38, 0xcb, 0xd9, 0xdd, 0xed, 0xfd
+// are all undefined for the 8080
 int Disassembler8080::illegal() {
     instructionBytes(state.pc, 1);
     mnemonic("???");
@@ -442,7 +444,10 @@ int Disassembler8080::illegal() {
     return 0; // irrelevant for disassembler
 }
 
-// disassemble the NOP opcode
+// disassemble the NOP (No Operation) opcode
+// no flags
+// no effect
+// 4 clocks
 int Disassembler8080::NOP() {
     instructionBytes(state.pc, 1);
     mnemonic("NOP");
@@ -453,7 +458,10 @@ int Disassembler8080::NOP() {
     return 4; // irrelevant for disassembler
 }
 
-//disassemble the LXI B opcode
+// disassemble the LXI B (Load Register Pair BC immediate) opcode
+// no flags
+// B <- byte 3, C <- byte 2
+// 10 clocks
 int Disassembler8080::LXI_B() {
     instructionBytes(state.pc, 3);
     mnemonic("LXI");
@@ -467,7 +475,10 @@ int Disassembler8080::LXI_B() {
     return 10;
 }
 
-//disassemble the STAX B opcode
+// disassemble the STAX B (Store Accumulator indirect (BC)) opcode
+// no flags
+// (BC) <- A
+// 7 clocks
 int Disassembler8080::STAX_B() {
     instructionBytes(state.pc, 1);
     mnemonic("STAX");
@@ -475,10 +486,13 @@ int Disassembler8080::STAX_B() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
-//disassemble the INX B opcode
+// disassemble the INX B (Increment Register Pair BC) opcode
+// no flags
+// BC <- BC+1
+// 5 clocks
 int Disassembler8080::INX_B() {
     instructionBytes(state.pc, 1);
     mnemonic("INX");
@@ -489,7 +503,10 @@ int Disassembler8080::INX_B() {
     return 5;
 }
 
-//disassemble the INR B opcode
+// disassemble the INR B (Increment Register B) opcode
+// Z, S, P, AC
+// B <- B+1
+// 5 clocks
 int Disassembler8080::INR_B() {
     instructionBytes(state.pc, 1);
     mnemonic("INR");
@@ -500,7 +517,10 @@ int Disassembler8080::INR_B() {
     return 5;
 }
 
-//disassemble the DCR B opcode
+// disassemble the DCR B (Decrement Register B) opcode
+// Z, S, P, AC
+// B <- B-1
+// 5 clocks
 int Disassembler8080::DCR_B() {
     instructionBytes(state.pc, 1);
     mnemonic("DCR");
@@ -511,7 +531,10 @@ int Disassembler8080::DCR_B() {
     return 5;
 }
 
-//disassemble the MVI B opcode
+// disassemble the MVI B (Move Immediate B) opcode
+// no flags
+// B <- byte 2
+// 7 clocks
 int Disassembler8080::MVI_B() {
     instructionBytes(state.pc, 2);
     mnemonic("MVI");
@@ -524,7 +547,10 @@ int Disassembler8080::MVI_B() {
     return 7;
 }
 
-// disassemble the RLC opcode
+// disassemble the RLC (Rotate Accumulator Left) opcode
+// CY
+// A = A << 1; bit 0 = prev bit 7; CY = prev bit 7
+// 4 clocks
 int Disassembler8080::RLC() {
     instructionBytes(state.pc, 1);
     mnemonic("RLC");
@@ -535,7 +561,10 @@ int Disassembler8080::RLC() {
     return 4; // irrelevant for disassembler
 }
 
-// disassemble the DAD B opcode
+// disassemble the DAD B (Double Add B) opcode
+// CY
+// HL = HL + BC
+// 10 clocks
 int Disassembler8080::DAD_B() {
     instructionBytes(state.pc, 1);
     mnemonic("DAD");
@@ -546,7 +575,10 @@ int Disassembler8080::DAD_B() {
     return 10; // irrelevant for disassembler
 }
 
-// disassemble th LDAX B opcode
+// disassemble th LDAX B (Load Accumulator (BC)) opcode
+// no flags
+// A <- (BC)
+// 7 clocks
 int Disassembler8080::LDAX_B() {
     instructionBytes(state.pc, 1);
     mnemonic("LDAX");
@@ -554,10 +586,13 @@ int Disassembler8080::LDAX_B() {
 
     ++state.pc;
 
-    return 10; // irrelevant for disassembler
+    return 7; // irrelevant for disassembler
 }
 
-//disassemble the DCX B opcode
+// disassemble the DCX B (Decrement Register Pair BC) opcode
+// no flags
+// BC = BC-1
+// 5 clocks
 int Disassembler8080::DCX_B() {
     instructionBytes(state.pc, 1);
     mnemonic("DCX");
@@ -568,7 +603,10 @@ int Disassembler8080::DCX_B() {
     return 5;
 }
 
-//disassemble the INR C opcode
+// disassemble the INR C (Increment Register C) opcode
+// Z, S, P, AC
+// C <- C+1
+// 5 clocks
 int Disassembler8080::INR_C() {
     instructionBytes(state.pc, 1);
     mnemonic("INR");
@@ -579,7 +617,10 @@ int Disassembler8080::INR_C() {
     return 5;
 }
 
-//disassemble the DCR C opcode
+// disassemble the DCR C (Decrement Register C) opcode
+// Z, S, P, AC
+// C <-C-1
+// 5 clocks
 int Disassembler8080::DCR_C() {
     instructionBytes(state.pc, 1);
     mnemonic("DCR");
@@ -590,7 +631,10 @@ int Disassembler8080::DCR_C() {
     return 5;
 }
 
-//disassemble the MVI C opcode
+// disassemble the MVI C (Move Immidiate C) opcode
+// no flags
+// C <- byte 2
+// 7 clocks
 int Disassembler8080::MVI_C() {
     instructionBytes(state.pc, 2);
     mnemonic("MVI");
@@ -603,7 +647,24 @@ int Disassembler8080::MVI_C() {
     return 7;
 }
 
-//disassemble the LXI D opcode
+// disassemble the RRC (Rotate Accumulator Right) opcode
+// no flags
+// A = A >> 1; bit 7 = prev bit 0; CY = prev bit 0
+// 4 clocks
+int Disassembler8080::RRC() {
+    instructionBytes(state.pc, 1);
+    mnemonic("RRC");
+    outputDevice << std::endl;
+
+    ++state.pc;
+
+    return 4; // irrelevant for disassembler
+}
+
+// disassemble the LXI D (Load Register Pair DE Immediate) opcode
+// no flags
+// D <- byte 3, E <- byte 2
+// 10 clocks
 int Disassembler8080::LXI_D() {
     instructionBytes(state.pc, 3);
     mnemonic("LXI");
@@ -617,7 +678,10 @@ int Disassembler8080::LXI_D() {
     return 10;
 }
 
-//disassemble the STAX D opcode
+// disassemble the STAX D (Store Accumulator (DC)) opcode
+// no flags
+// (DE) <- A
+// 7 clocks
 int Disassembler8080::STAX_D() {
     instructionBytes(state.pc, 1);
     mnemonic("STAX");
@@ -625,10 +689,13 @@ int Disassembler8080::STAX_D() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 7;
 }
 
-//disassemble the INX D opcode
+// disassemble the INX D (Increment Register Pair DC) opcode
+// no flags
+// DE <- DE + 1
+// 5 clocks
 int Disassembler8080::INX_D() {
     instructionBytes(state.pc, 1);
     mnemonic("INX");
@@ -639,7 +706,10 @@ int Disassembler8080::INX_D() {
     return 5;
 }
 
-//disassemble the INR D opcode
+// disassemble the INR D (Increment Register D) opcode
+// Z, S, P, AC
+// D <- D+1
+// 5 clocks
 int Disassembler8080::INR_D() {
     instructionBytes(state.pc, 1);
     mnemonic("INR");
@@ -650,7 +720,10 @@ int Disassembler8080::INR_D() {
     return 5;
 }
 
-//disassemble the DCR D opcode
+// disassemble the DCR D (Decrement Register D) opcode
+// Z, S, P, AC
+// D <- D-1
+// 5 clocks
 int Disassembler8080::DCR_D() {
     instructionBytes(state.pc, 1);
     mnemonic("DCR");
@@ -661,7 +734,10 @@ int Disassembler8080::DCR_D() {
     return 5;
 }
 
-//disassemble the MVI D opcode
+// disassemble the MVI D (Move Immediate D) opcode
+// no flags
+// D <- byte 2
+// 7 clocks
 int Disassembler8080::MVI_D() {
     instructionBytes(state.pc, 2);
     mnemonic("MVI");
@@ -674,7 +750,10 @@ int Disassembler8080::MVI_D() {
     return 7;
 }
 
-// disassemble th RAL opcode
+// disassemble th RAL (Roatate Accumulator Left Through Carry) opcode
+// CY
+// A = A << 1; bit 0 = prev CY; CY = prev bit 7
+// 4 clocks
 int Disassembler8080::RAL() {
     instructionBytes(state.pc, 1);
     mnemonic("RAL");
@@ -682,13 +761,16 @@ int Disassembler8080::RAL() {
 
     ++state.pc;
 
-    return 10; // irrelevant for disassembler
+    return 4; // irrelevant for disassembler
 }
 
-// disassemble th LDAX D opcode
-int Disassembler8080::LDAX_D() {
+// disassemble the DAD D (Double Add DC) opcode
+// CY
+// HL = HL + DE
+// 10 clocks
+int Disassembler8080::DAD_D() {
     instructionBytes(state.pc, 1);
-    mnemonic("LDAX");
+    mnemonic("DAD");
     outputDevice << "D" << std::endl;
 
     ++state.pc;
@@ -696,7 +778,24 @@ int Disassembler8080::LDAX_D() {
     return 10; // irrelevant for disassembler
 }
 
-//disassemble the DCX D opcode
+// disassemble th LDAX D (Load Accumulator (DE)) opcode
+// no flags
+// A <- (DE)
+// 7 clocks
+int Disassembler8080::LDAX_D() {
+    instructionBytes(state.pc, 1);
+    mnemonic("LDAX");
+    outputDevice << "D" << std::endl;
+
+    ++state.pc;
+
+    return 7; // irrelevant for disassembler
+}
+
+// disassemble the DCX D (Decrement Register Pair DE) opcode
+// no flags
+// DE = DE-1
+// 5 clocks
 int Disassembler8080::DCX_D() {
     instructionBytes(state.pc, 1);
     mnemonic("DCX");
@@ -707,7 +806,10 @@ int Disassembler8080::DCX_D() {
     return 5;
 }
 
-//disassemble the INR E opcode
+// disassemble the INR E (Increment Register E) opcode
+// Z, S, P, AC
+// E <-E+1
+// 5 clocks
 int Disassembler8080::INR_E() {
     instructionBytes(state.pc, 1);
     mnemonic("INR");
@@ -718,7 +820,10 @@ int Disassembler8080::INR_E() {
     return 5;
 }
 
-//disassemble the DCR E opcode
+// disassemble the DCR E (Decrement Register E) opcode
+// Z, S, P, AC
+// E <- E-1
+// 5 clocks
 int Disassembler8080::DCR_E() {
     instructionBytes(state.pc, 1);
     mnemonic("DCR");
@@ -729,7 +834,10 @@ int Disassembler8080::DCR_E() {
     return 5;
 }
 
-//disassemble the MVI D opcode
+// disassemble the MVI E (Move Immediate E) opcode
+// no flags
+// E <- byte 2
+// 7 clocks
 int Disassembler8080::MVI_E() {
     instructionBytes(state.pc, 2);
     mnemonic("MVI");
@@ -742,7 +850,10 @@ int Disassembler8080::MVI_E() {
     return 7;
 }
 
-//disassemble the RAR opcode
+// disassemble the RAR (Rotate Accumulator Right Through Carry) opcode
+// CY
+// A = A >> 1; bit 7 = prev bit 7; CY = prev bit 0
+// 4 clocks
 int Disassembler8080::RAR() {
     instructionBytes(state.pc, 1);
     mnemonic("RAR");
@@ -750,78 +861,13 @@ int Disassembler8080::RAR() {
 
     ++state.pc; // advance the pc correctly
 
-    return 5;
+    return 4;
 }
 
-// disassemble the DAD D opcode
-int Disassembler8080::DAD_D() {
-    instructionBytes(state.pc, 1);
-    mnemonic("DAD");
-    outputDevice << "D" << std::endl;
-
-    ++state.pc;
-
-    return 10; // irrelevant for disassembler
-}
-
-// disassemble the RRC opcode
-int Disassembler8080::RRC() {
-    instructionBytes(state.pc, 1);
-    mnemonic("RRC");
-    outputDevice << std::endl;
-
-    ++state.pc;
-
-    return 4; // irrelevant for disassembler
-}
-
-//disassemble the INX H opcode
-int Disassembler8080::INX_H() {
-    instructionBytes(state.pc, 1);
-    mnemonic("INX");
-    outputDevice << "H" << std::endl;
-
-    ++state.pc; // advance the pc correctly
-
-    return 5;
-}
-
-//disassemble the INR H opcode
-int Disassembler8080::INR_H() {
-    instructionBytes(state.pc, 1);
-    mnemonic("INR");
-    outputDevice << "H" << std::endl;
-
-    ++state.pc; // advance the pc correctly
-
-    return 5;
-}
-
-//disassemble the DCR H opcode
-int Disassembler8080::DCR_H() {
-    instructionBytes(state.pc, 1);
-    mnemonic("DCR");
-    outputDevice << "H" << std::endl;
-
-    ++state.pc; // advance the pc correctly
-
-    return 5;
-}
-
-//disassemble the MVI H opcode
-int Disassembler8080::MVI_H() {
-    instructionBytes(state.pc, 2);
-    mnemonic("MVI");
-    outputDevice << "H," << IMM_SIGIL;
-    oneByteOperand(state.pc+1);
-    outputDevice << std::endl;
-
-    state.pc += 2; // advance the pc correctly
-
-    return 7;
-}
-
-//disassemble the LXI H opcode
+// disassemble the LXI H (Load Register Pair HL Immediate) opcode
+// no flags
+// H <- byte 3, L <- byte 2
+// 10 clocks
 int Disassembler8080::LXI_H() {
     instructionBytes(state.pc, 3);
     mnemonic("LXI");
@@ -834,64 +880,10 @@ int Disassembler8080::LXI_H() {
     return 10;
 }
 
-//disassemble the DCX H opcode
-int Disassembler8080::DCX_H() {
-    instructionBytes(state.pc, 1);
-    mnemonic("DCX");
-    outputDevice << "H" << std::endl;
-
-    ++state.pc; // advance the pc correctly
-
-    return 5;
-}
-
-//disassemble the INR L opcode
-int Disassembler8080::INR_L() {
-    instructionBytes(state.pc, 1);
-    mnemonic("INR");
-    outputDevice << "L" << std::endl;
-
-    ++state.pc; // advance the pc correctly
-
-    return 5;
-}
-
-//disassemble the DCR L opcode
-int Disassembler8080::DCR_L() {
-    instructionBytes(state.pc, 1);
-    mnemonic("DCR");
-    outputDevice << "L" << std::endl;
-
-    ++state.pc; // advance the pc correctly
-
-    return 5;
-}
-
-// disassemble the CMA opcode
-int Disassembler8080::CMA() {
-    instructionBytes(state.pc, 1);
-    mnemonic("CMA");
-    outputDevice << std::endl;
-
-    ++state.pc;
-
-    return 4; // irrelevant for disassembler
-}
-
-//disassemble the MVI L opcode
-int Disassembler8080::MVI_L() {
-    instructionBytes(state.pc, 2);
-    mnemonic("MVI");
-    outputDevice << "L," << IMM_SIGIL;
-    oneByteOperand(state.pc+1);
-    outputDevice << std::endl;
-
-    state.pc += 2; // advance the pc correctly
-
-    return 7;
-}
-
-//disassemble the SHLD opcode
+// disassemble the SHLD (Store H and L Direct) opcode
+// no flags
+// (adr) <-L; (adr+1)<-H
+// 16 clocks
 int Disassembler8080::SHLD() {
     instructionBytes(state.pc, 3);
     mnemonic("SHLD");
@@ -904,7 +896,66 @@ int Disassembler8080::SHLD() {
     return 16;
 }
 
+// disassemble the INX H (Increment Register Pair HL) opcode
+// no flags
+// HL <- HL + 1
+// 5 clocks
+int Disassembler8080::INX_H() {
+    instructionBytes(state.pc, 1);
+    mnemonic("INX");
+    outputDevice << "H" << std::endl;
+
+    ++state.pc; // advance the pc correctly
+
+    return 5;
+}
+
+// disassemble the INR H (Increment Register H) opcode
+// Z, S, P, AC
+// H <- H+1
+// 5 clocks
+int Disassembler8080::INR_H() {
+    instructionBytes(state.pc, 1);
+    mnemonic("INR");
+    outputDevice << "H" << std::endl;
+
+    ++state.pc; // advance the pc correctly
+
+    return 5;
+}
+
+// disassemble the DCR H (Decrement Register H) opcode
+// Z, S, P, AC
+// H <- H-1
+// 5 clocks
+int Disassembler8080::DCR_H() {
+    instructionBytes(state.pc, 1);
+    mnemonic("DCR");
+    outputDevice << "H" << std::endl;
+
+    ++state.pc; // advance the pc correctly
+
+    return 5;
+}
+
+// disassemble the MVI H opcode
+// no flags
+// H <- byte 2
+// 7 clocks
+int Disassembler8080::MVI_H() {
+    instructionBytes(state.pc, 2);
+    mnemonic("MVI");
+    outputDevice << "H," << IMM_SIGIL;
+    oneByteOperand(state.pc+1);
+    outputDevice << std::endl;
+
+    state.pc += 2; // advance the pc correctly
+
+    return 7;
+}
+
 // disassemble the DAA opcode
+// 4 clocks
 int Disassembler8080::DAA() {
     instructionBytes(state.pc, 1);
     mnemonic("DAA");
@@ -916,6 +967,9 @@ int Disassembler8080::DAA() {
 }
 
 // disassemble the DAD H opcode
+// CY
+// HL = HL + HI
+// 10 clocks
 int Disassembler8080::DAD_H() {
     instructionBytes(state.pc, 1);
     mnemonic("DAD");
@@ -926,7 +980,10 @@ int Disassembler8080::DAD_H() {
     return 10; // irrelevant for disassembler
 }
 
-//disassemble the LHLD opcode
+// disassemble the LHLD opcode
+// no flags
+// L <- (adr); H<-(adr+1)
+// 16 clocks
 int Disassembler8080::LHLD() {
     instructionBytes(state.pc, 3);
     mnemonic("LHLD");
@@ -935,10 +992,85 @@ int Disassembler8080::LHLD() {
 
     state.pc += 3; // advance the pc correctly
 
-    return 10;
+    return 16;
 }
 
-//disassemble the LXI SP opcode
+// disassemble the DCX H opcode
+// no flags
+// HL = HL-1
+// 5 clocks
+int Disassembler8080::DCX_H() {
+    instructionBytes(state.pc, 1);
+    mnemonic("DCX");
+    outputDevice << "H" << std::endl;
+
+    ++state.pc; // advance the pc correctly
+
+    return 5;
+}
+
+// disassemble the INR L opcode
+// Z, S, P, AC
+// L <- L+1
+// 5 clocks
+int Disassembler8080::INR_L() {
+    instructionBytes(state.pc, 1);
+    mnemonic("INR");
+    outputDevice << "L" << std::endl;
+
+    ++state.pc; // advance the pc correctly
+
+    return 5;
+}
+
+// disassemble the DCR L opcode
+// Z, S, P, AC
+// L <- L-1
+// 5 clocks
+int Disassembler8080::DCR_L() {
+    instructionBytes(state.pc, 1);
+    mnemonic("DCR");
+    outputDevice << "L" << std::endl;
+
+    ++state.pc; // advance the pc correctly
+
+    return 5;
+}
+
+// disassemble the MVI L opcode
+// no flags
+// L <- byte 2
+// 7 clocks
+int Disassembler8080::MVI_L() {
+    instructionBytes(state.pc, 2);
+    mnemonic("MVI");
+    outputDevice << "L," << IMM_SIGIL;
+    oneByteOperand(state.pc+1);
+    outputDevice << std::endl;
+
+    state.pc += 2; // advance the pc correctly
+
+    return 7;
+}
+
+// disassemble the CMA opcode
+// no flags
+// A <- !A
+// 4 clocks
+int Disassembler8080::CMA() {
+    instructionBytes(state.pc, 1);
+    mnemonic("CMA");
+    outputDevice << std::endl;
+
+    ++state.pc;
+
+    return 4; // irrelevant for disassembler
+}
+
+// disassemble the LXI SP opcode
+// no flags
+// SP.hi <- byte 3, SP.lo <- byte 2
+// 10 clocks
 int Disassembler8080::LXI_SP() {
     instructionBytes(state.pc, 3);
     mnemonic("LXI");
@@ -952,7 +1084,10 @@ int Disassembler8080::LXI_SP() {
     return 10;
 }
 
-//disassemble the STA opcode
+// disassemble the STA opcode
+// no flags
+// (adr) <- A
+// 13 clocks
 int Disassembler8080::STA() {
     instructionBytes(state.pc, 3);
     mnemonic("STA");
@@ -964,7 +1099,10 @@ int Disassembler8080::STA() {
     return 13;
 }
 
-//disassemble the INX SP opcode
+// disassemble the INX SP opcode
+// no flags
+// SP = SP + 1
+// 5 clocks
 int Disassembler8080::INX_SP() {
     instructionBytes(state.pc, 1);
     mnemonic("INX");
@@ -972,10 +1110,13 @@ int Disassembler8080::INX_SP() {
     
     ++state.pc; // advance the pc correctly
 
-    return 10;
+    return 5;
 }
 
-//disassemble the INR_M opcode
+// disassemble the INR_M opcode
+// Z, S, P, AC
+// (HL) <- (HL)+1
+// 10 clocks
 int Disassembler8080::INR_M() {
     instructionBytes(state.pc, 1);
     mnemonic("INR");
@@ -986,7 +1127,10 @@ int Disassembler8080::INR_M() {
     return 10;
 }
 
-//disassemble the DCR_M opcode
+// disassemble the DCR_M opcode
+// Z, S, P, AC
+// (HL) <- (HL)-1
+// 10 clocks
 int Disassembler8080::DCR_M() {
     instructionBytes(state.pc, 1);
     mnemonic("DCR");
@@ -997,8 +1141,10 @@ int Disassembler8080::DCR_M() {
     return 10;
 }
 
-
-//disassemble the MVI M opcode
+// disassemble the MVI M opcode
+// no flags
+// (HL) <- byte 2
+// 10 clocks
 int Disassembler8080::MVI_M() {
     instructionBytes(state.pc, 2);
     mnemonic("MVI");
@@ -1008,10 +1154,13 @@ int Disassembler8080::MVI_M() {
 
     state.pc += 2; // advance the pc correctly
 
-    return 7;
+    return 10;
 }
 
 // disassemble the STC opcode
+// CY
+// CY = 1
+// 4 clocks
 int Disassembler8080::STC() {
     instructionBytes(state.pc, 1);
     mnemonic("STC");
@@ -1023,6 +1172,9 @@ int Disassembler8080::STC() {
 }
 
 // disassemble the DAD SP opcode
+// CY
+// HL = HL + SP
+// 10 clocks
 int Disassembler8080::DAD_SP() {
     instructionBytes(state.pc, 1);
     mnemonic("DAD");
@@ -1030,10 +1182,13 @@ int Disassembler8080::DAD_SP() {
 
     ++state.pc;
 
-    return 4; // irrelevant for disassembler
+    return 10; // irrelevant for disassembler
 }
 
-//disassemble the LDA opcode
+// disassemble the LDA opcode
+// no flags
+// A <- (adr)
+// 13 clocks
 int Disassembler8080::LDA() {
     instructionBytes(state.pc, 3);
     mnemonic("LDA");
@@ -1045,7 +1200,10 @@ int Disassembler8080::LDA() {
     return 13;
 }
 
-//disassemble the DCX SP opcode
+// disassemble the DCX SP opcode
+// no flags
+// SP = SP-1
+// 5 clocks
 int Disassembler8080::DCX_SP() {
     instructionBytes(state.pc, 1);
     mnemonic("DCX");
@@ -1056,7 +1214,10 @@ int Disassembler8080::DCX_SP() {
     return 5;
 }
 
-//disassemble the INR_A opcode
+// disassemble the INR_A opcode
+// Z, S, P, AC
+// A <- A+1
+// 5 clocks
 int Disassembler8080::INR_A() {
     instructionBytes(state.pc, 1);
     mnemonic("INR");
@@ -1067,7 +1228,10 @@ int Disassembler8080::INR_A() {
     return 5;
 }
 
-//disassemble the DCR_A opcode
+// disassemble the DCR_A opcode
+// Z, S, P, AC
+// A <- A-1
+// 5 clocks
 int Disassembler8080::DCR_A() {
     instructionBytes(state.pc, 1);
     mnemonic("DCR");
@@ -1078,7 +1242,10 @@ int Disassembler8080::DCR_A() {
     return 5;
 }
 
-//disassemble the MVI A opcode
+// disassemble the MVI A opcode
+// no flags
+// A <- byte 2
+// 7 clocks
 int Disassembler8080::MVI_A() {
     instructionBytes(state.pc, 2);
     mnemonic("MVI");
@@ -1092,6 +1259,9 @@ int Disassembler8080::MVI_A() {
 }
 
 // disassemble the CMC opcode
+// CY
+// CY=!CY
+// 4 clocks
 int Disassembler8080::CMC() {
     instructionBytes(state.pc, 1);
     mnemonic("CMC");
