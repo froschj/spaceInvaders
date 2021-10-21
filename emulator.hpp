@@ -79,7 +79,7 @@ struct State8080 : State {
 class Emulator8080 : 
         public Processor<struct State8080, Memory> {
     public:
-        // default to cout as the output device
+        // default constructor
         Emulator8080();
         // construct with a memory attached
         Emulator8080(Memory *memoryDevice);
@@ -91,7 +91,7 @@ class Emulator8080 :
         uint8_t fetch(uint16_t address);
 
         // decode an opcode and get its execution
-        std::function<int(void)> decode(uint8_t);
+        std::function<int(void)> decode(uint8_t word);
 
         // hold opcode lookup table
         std::map<uint8_t, std::function<int(void)>> opcodes; 
@@ -99,7 +99,7 @@ class Emulator8080 :
         void buildMap(); // populate the lookup table
                 
         // catchall for illegal opcodes (probably strings/values in code)
-        int illegal();  //0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38, 
+        // int illegal();  //0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38, 
                         //0xcb, 0xd9, 0xdd, 0xed, 0xfd
      
 };

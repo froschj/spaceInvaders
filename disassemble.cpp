@@ -15,6 +15,7 @@
 #include "disassembler.hpp"
 #include <vector>
 #include <string>
+#include "emulator.hpp"
 
 #ifdef WINDOWS
 #define TCLAP_NAMESTARTSTRING "~~"
@@ -67,7 +68,7 @@ int main(int argc, char *argv[]) {
 
     // create a buffer and read into it
     std::unique_ptr<std::vector<uint8_t>> tempROM = 
-        std::make_unique<std::vector<uint8_t>> (romLength);
+        std::make_unique<std::vector<uint8_t>> (0x2400);
     romFile.read(reinterpret_cast<char*>(tempROM->data()), romLength);
     if (romFile.fail()){
         std::cerr << "Error reading file." << std::endl;
@@ -84,7 +85,7 @@ int main(int argc, char *argv[]) {
         printable[DISPLAY_WIDTH] = '\0';
         int printableIndex = 0;
         std::cout << std::hex << std::setfill('0');
-        for (int i = rom.getLowAddress(); i <= rom.getHighAddress(); ++i){
+        for (int i = rom.getLowAddress(); i < romLength; ++i){
             if (i % DISPLAY_WIDTH == 0) {
                 if (i != 0){
                     std::cout << printable;
@@ -109,7 +110,7 @@ int main(int argc, char *argv[]) {
         debug8080.reset(0x0000); //start at address 0x0000
         try {
             // processor will disassemble until the end of memory
-            while (debug8080.getState()->pc <= rom.getHighAddress()) {
+            while (debug8080.getState()->pc < romLength) {
                 debug8080.step();
             }
         } catch (const std::exception& e) {
@@ -120,7 +121,18 @@ int main(int argc, char *argv[]) {
         }
 
     } else if (args->commandName == "debug") {
-        
+        Disassembler8080 disassembler(&rom);
+        Emulator8080 emulator(&rom);
+        disassembler.reset(0x0000);
+        emulator.reset(0x0000);
+        try {
+            
+        } catch (const std::exception& e) {
+            // processor throws excptions on illegal memory read
+            // and on unknown opcode
+            std::cerr << e.what() << std::endl;
+            return 1;
+        }
     }
 
     //std::cout << "Filename: " << args->romFileName << std::endl;
