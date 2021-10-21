@@ -127,14 +127,26 @@ std::function<int(void)> Emulator8080::decode(uint8_t word) {
 }
 
 void Emulator8080::buildMap() {
-    // NOP (0x00): 4 cycles
+    // NOP (0x00): 
+    // 4 cycles, 1 byte
     opcodes.insert( { 0x00, 
         [this](){ 
             ++this->state.pc; 
             return 4; 
         } 
     } );
-    // JMP (0xc3) PC <= adr: 10 cycles
+    // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
+    // 10 cycles, 3 bytes
+    opcodes.insert( { 0x31, 
+        [this](){
+            uint16_t newStackPointer = this->readAddress(this->state.pc + 1); 
+            this->state.sp = newStackPointer; 
+            this->state.pc += 3;
+            return 10; 
+        } 
+    } );
+    // JMP (0xc3) PC <= adr: 
+    // 10 cycles, 3 bytes
     opcodes.insert( { 0xc3, 
         [this](){
             uint16_t jumpAddress = this->readAddress(this->state.pc + 1); 
@@ -144,6 +156,7 @@ void Emulator8080::buildMap() {
     } );
 }
 
+// read an address stored starting at atAddress
 uint16_t Emulator8080::readAddress(uint16_t atAddress) {
     uint16_t lsb = this->memory->read(atAddress);
     uint16_t msb = this->memory->read(atAddress + 1) << 8;
