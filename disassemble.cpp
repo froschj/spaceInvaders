@@ -126,16 +126,14 @@ int main(int argc, char *argv[]) {
         disassembler.reset(0x0000);
         emulator.reset(0x0000);
         try {
-            int cycles = 0;
+            unsigned long long cycles = 0;
             std::unique_ptr<struct State8080> state = nullptr;
             while (emulator.getState()->pc < romLength) {
                 disassembler.step();
-                int cycles = emulator.step();
+                cycles += emulator.step();
                 state = emulator.getState();
                 disassembler.reset(state->pc);
-                std::ios saveFormat(nullptr);
-                saveFormat.copyfmt(std::cout);
-                std::cout << "Cycles: " << cycles << std::endl;
+                std::cout << "Cycles: " << std::dec << cycles << std::endl;
                 std::cout << std::right << std::hex << std::setfill('0');
                 std::cout << "A: 0x" << std::setw(2) 
                     << static_cast<int>(state->a) << " ";
@@ -158,7 +156,6 @@ int main(int argc, char *argv[]) {
                 std::cout << "Flags: 0b" << std::setw(8)
                     << std::bitset<8>(static_cast<int>(state->getFlags()));
                 std::cout << std::endl;
-                std::cout.copyfmt(saveFormat);
             }
         } catch (const std::exception& e) {
             // processor throws excptions on illegal memory read

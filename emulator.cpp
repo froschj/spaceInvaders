@@ -135,6 +135,18 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // MVI B (0x06): B <- byte 2
+    // 7 cycles, 2 bytes
+    opcodes.insert( { 0x06, 
+        [this](){ 
+            this->moveImmediateData(
+                this->state.b, 
+                memory->read(this->state.pc + 1)
+            ); 
+            this->state.pc +=2;
+            return 7; 
+        } 
+    } );
     // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
     // 10 cycles, 3 bytes
     opcodes.insert( { 0x31, 
@@ -161,6 +173,10 @@ uint16_t Emulator8080::readAddress(uint16_t atAddress) {
     uint16_t lsb = this->memory->read(atAddress);
     uint16_t msb = this->memory->read(atAddress + 1) << 8;
     return msb + lsb;
+}
+
+void Emulator8080::moveImmediateData(uint8_t &destination, uint8_t data) {
+    destination = data;
 }
 
 /*
