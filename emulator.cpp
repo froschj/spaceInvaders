@@ -1,50 +1,4 @@
-/*
-template<class stateType, class memoryType>
-class Processor {
-    public:
-        // execute an instruction, return # of cycles
-*        virtual int step() = 0; 
-*        virtual ~Processor() {}
-*        Processor() {}
-*        std::unique_ptr<stateType> getState() const {
-            return state.clone();
-        } // return a copy of the current state
-*        void connectMemory(memoryType *memoryDevice) {
-            memory = memoryDevice;
-        }; // connect the processor to a memory
-    protected:
-        stateType state;
-        memoryType *memory;
-};
 
-class Emulator8080 : 
-        public Processor<struct State8080, Memory> {
-    public:
-        // default constructor
-*        Emulator8080();
-        // construct with a memory attached
-*        Emulator8080(Memory *memoryDevice);
-*        ~Emulator8080();
-*        int step() override; // "execute" an instruction
-*        void reset(uint16_t address = 0x0000); // put the pc at an address
-    private:
-        // fetch instruction at address
-*        uint8_t fetch(uint16_t address);
-
-        // decode an opcode and get its execution
-*        std::function<int(void)> decode(uint8_t);
-
-        // hold opcode lookup table
-*        std::map<uint8_t, std::function<int(void)>> opcodes; 
-
-*        void buildMap(); // populate the lookup table
-                
-        // catchall for illegal opcodes (probably strings/values in code)
-*        int illegal();  //0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38, 
-                        //0xcb, 0xd9, 0xdd, 0xed, 0xfd
-     
-};
-*/
 
 #include <functional>
 #include <map>
@@ -194,6 +148,16 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // MOV M,A (0x77) (HL) <- A:
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x77, 
+        [this](){
+            this->memory->write(this->state.a, this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
     // JMP (0xc3) PC <= adr: 
     // 10 cycles, 3 bytes
     // no flags
@@ -243,18 +207,8 @@ void Emulator8080::moveImmediateData(uint8_t &destination, uint8_t data) {
     destination = data;
 }
 
-/*
-int Emulator8080::illegal() {
-    std::stringstream badAddress;
-    std::stringstream badOpcode;
-    badAddress << "$" 
-        << std::setw(4) << std::hex << std::setfill('0') 
-        << static_cast<int>(state.pc);
-    badOpcode << "$" 
-        << std::setw(2) << std::hex << std::setfill('0') 
-        << static_cast<int>(memory->read(state.pc));
-    throw UnimplementedInstructionError(
-        badAddress.str(),
-        badOpcode.str()
-    );
-}*/
+uint16_t Emulator8080::getHL() {
+    uint16_t msb = this->state.h << 8;
+    uint16_t lsb = this->state.l;
+    return msb + lsb;
+}
