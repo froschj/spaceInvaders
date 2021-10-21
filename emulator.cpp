@@ -129,6 +129,7 @@ std::function<int(void)> Emulator8080::decode(uint8_t word) {
 void Emulator8080::buildMap() {
     // NOP (0x00): 
     // 4 cycles, 1 byte
+    // no flags
     opcodes.insert( { 0x00, 
         [this](){ 
             ++this->state.pc; 
@@ -137,6 +138,7 @@ void Emulator8080::buildMap() {
     } );
     // MVI B (0x06): B <- byte 2
     // 7 cycles, 2 bytes
+    // no flags
     opcodes.insert( { 0x06, 
         [this](){ 
             this->moveImmediateData(
@@ -147,8 +149,20 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // LXI D (0x11) D <- byte 3, E <- byte 2: 
+    // 10 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0x11, 
+        [this](){
+            this->state.d = this->memory->read(this->state.pc + 2);
+            this->state.e = this->memory->read(this->state.pc + 1); 
+            this->state.pc += 3;
+            return 10; 
+        } 
+    } );
     // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
     // 10 cycles, 3 bytes
+    // no flags
     opcodes.insert( { 0x31, 
         [this](){
             uint16_t newStackPointer = this->readAddress(this->state.pc + 1); 
@@ -159,6 +173,7 @@ void Emulator8080::buildMap() {
     } );
     // JMP (0xc3) PC <= adr: 
     // 10 cycles, 3 bytes
+    // no flags
     opcodes.insert( { 0xc3, 
         [this](){
             uint16_t jumpAddress = this->readAddress(this->state.pc + 1); 
@@ -168,6 +183,7 @@ void Emulator8080::buildMap() {
     } );
     // CALL (0xcd) (SP-1)<-PC.hi;(SP-2)<-PC.lo;SP<-SP-2;PC=adr: 
     // 17 cycles, 3 bytes
+    // no flags
     opcodes.insert( { 0xcd, 
         [this](){
             // destination address
