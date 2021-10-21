@@ -160,6 +160,29 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // LDAX D (0x1a) A <- (DE): 
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x1a, 
+        [this](){
+            uint16_t msb = this->state.d << 8;
+            uint16_t lsb = this->state.e;
+            this->state.a = this->memory->read(msb + lsb);
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
+    // LXI H (0x21) H <- byte 3, L <- byte 2: 
+    // 10 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0x21, 
+        [this](){
+            this->state.h = this->memory->read(this->state.pc + 2);
+            this->state.l = this->memory->read(this->state.pc + 1); 
+            this->state.pc += 3;
+            return 10; 
+        } 
+    } );
     // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
     // 10 cycles, 3 bytes
     // no flags
