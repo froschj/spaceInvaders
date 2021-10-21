@@ -137,12 +137,17 @@ void Emulator8080::buildMap() {
     // JMP (0xc3) PC <= adr: 10 cycles
     opcodes.insert( { 0xc3, 
         [this](){
-            uint16_t lsb = this->memory->read(this->state.pc + 1);
-            uint16_t msb = this->memory->read(this->state.pc + 2) << 8; 
-            this->state.pc = msb + lsb; 
+            uint16_t jumpAddress = this->readAddress(this->state.pc + 1); 
+            this->state.pc = jumpAddress; 
             return 10; 
         } 
     } );
+}
+
+uint16_t Emulator8080::readAddress(uint16_t atAddress) {
+    uint16_t lsb = this->memory->read(atAddress);
+    uint16_t msb = this->memory->read(atAddress + 1) << 8;
+    return msb + lsb;
 }
 
 /*

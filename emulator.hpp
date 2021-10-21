@@ -97,6 +97,8 @@ class Emulator8080 :
         std::map<uint8_t, std::function<int(void)>> opcodes; 
 
         void buildMap(); // populate the lookup table
+
+        uint16_t readAddress(uint16_t atAddress);
                 
         // catchall for illegal opcodes (probably strings/values in code)
         // int illegal();  //0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38, 
