@@ -95,10 +95,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.insert( { 0x06, 
         [this](){ 
-            this->moveImmediateData(
-                this->state.b, 
-                memory->read(this->state.pc + 1)
-            ); 
+            this->state.b = memory->read(this->state.pc + 1);
             this->state.pc +=2;
             return 7; 
         } 
@@ -119,9 +116,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.insert( { 0x1a, 
         [this](){
-            uint16_t msb = this->state.d << 8;
-            uint16_t lsb = this->state.e;
-            this->state.a = this->memory->read(msb + lsb);
+            this->state.a = this->memory->read(this->getDE());
             ++this->state.pc;
             return 7; 
         } 
@@ -173,24 +168,8 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.insert( { 0xcd, 
         [this](){
-            // destination address
-            uint16_t callAddress = this->readAddress(this->state.pc + 1);
-            // advance pc to next instruction
-            this->state.pc += 3;
-            // push high byte of next pc
-            --this->state.sp;
-            this->memory->write(
-                static_cast<uint8_t>((this->state.pc & 0xFF00) >> 8),
-                this->state.sp
-            );
-            // push low byte of next pc
-            --this->state.sp;
-            this->memory->write(
-                static_cast<uint8_t>(this->state.pc & 0x00FF),
-                this->state.sp
-            );
-            // go to call address next  
-            this->state.pc = callAddress; 
+            // read destination address do call actions
+            this->callAddress(this->readAddress(this->state.pc + 1));
             return 17; 
         } 
     } );
@@ -203,8 +182,36 @@ uint16_t Emulator8080::readAddress(uint16_t atAddress) {
     return msb + lsb;
 }
 
-void Emulator8080::moveImmediateData(uint8_t &destination, uint8_t data) {
-    destination = data;
+// set up return address on stack and set jump address
+void Emulator8080::callAddress(uint16_t address) {
+    // advance pc to next instruction
+    this->state.pc += 3;
+    // push high byte of next pc
+    --this->state.sp;
+    this->memory->write(
+        static_cast<uint8_t>((this->state.pc & 0xFF00) >> 8),
+        this->state.sp
+    );
+    // push low byte of next pc
+    --this->state.sp;
+    this->memory->write(
+        static_cast<uint8_t>(this->state.pc & 0x00FF),
+        this->state.sp
+    );
+    // go to call address next  
+    this->state.pc = address;
+}
+
+uint16_t Emulator8080::getBC() {
+    uint16_t msb = this->state.b << 8;
+    uint16_t lsb = this->state.c;
+    return msb + lsb;
+}
+
+uint16_t Emulator8080::getDE() {
+    uint16_t msb = this->state.d << 8;
+    uint16_t lsb = this->state.e;
+    return msb + lsb;
 }
 
 uint16_t Emulator8080::getHL() {

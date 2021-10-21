@@ -100,7 +100,11 @@ class Emulator8080 :
 
         uint16_t readAddress(uint16_t atAddress);
         void moveImmediateData(uint8_t &destination, uint8_t data);
+        uint16_t getBC();
+        uint16_t getDE();
         uint16_t getHL();
+
+        void callAddress(uint16_t address);
                 
         // catchall for illegal opcodes (probably strings/values in code)
         // int illegal();  //0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38, 
