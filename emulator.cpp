@@ -127,8 +127,22 @@ std::function<int(void)> Emulator8080::decode(uint8_t word) {
 }
 
 void Emulator8080::buildMap() {
-    // NOP, 0x00
-    opcodes.insert( { 0x00, [](){ return 4; } } );
+    // NOP (0x00): 4 cycles
+    opcodes.insert( { 0x00, 
+        [this](){ 
+            ++this->state.pc; 
+            return 4; 
+        } 
+    } );
+    // JMP (0xc3) PC <= adr: 10 cycles
+    opcodes.insert( { 0xc3, 
+        [this](){
+            uint16_t lsb = this->memory->read(this->state.pc + 1);
+            uint16_t msb = this->memory->read(this->state.pc + 2) << 8; 
+            this->state.pc = msb + lsb; 
+            return 10; 
+        } 
+    } );
 }
 
 /*

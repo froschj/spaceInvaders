@@ -57,7 +57,7 @@ struct State8080 : State {
         uint8_t     l;    
         uint16_t    sp;
         uint16_t    pc;
-        uint8_t     getflags() { return flagsRegister; }
+        uint8_t     getFlags() { return flagsRegister; }
         bool isFlag(State8080::flag whichFlag) {
             return static_cast<bool>(flagsRegister & flagMasks[whichFlag]);
         }
