@@ -166,6 +166,31 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // CALL (0xcd) (SP-1)<-PC.hi;(SP-2)<-PC.lo;SP<-SP-2;PC=adr: 
+    // 17 cycles, 3 bytes
+    opcodes.insert( { 0xcd, 
+        [this](){
+            // destination address
+            uint16_t callAddress = this->readAddress(this->state.pc + 1);
+            // advance pc to next instruction
+            this->state.pc += 3;
+            // push high byte of next pc
+            --this->state.sp;
+            this->memory->write(
+                static_cast<uint8_t>((this->state.pc & 0xFF00) >> 8),
+                this->state.sp
+            );
+            // push low byte of next pc
+            --this->state.sp;
+            this->memory->write(
+                static_cast<uint8_t>(this->state.pc & 0x00FF),
+                this->state.sp
+            );
+            // go to call address next  
+            this->state.pc = callAddress; 
+            return 17; 
+        } 
+    } );
 }
 
 // read an address stored starting at atAddress
