@@ -11,6 +11,8 @@
 #include <cstdint>
 #include <iomanip>
 #include "memory.hpp"
+#include "processor.hpp"
+#include "disassembler.hpp"
 
 #ifdef WINDOWS
 #define TCLAP_NAMESTARTSTRING "~~"
@@ -101,8 +103,20 @@ int main(int argc, char *argv[]) {
         std::cout << std::endl;
     } else {
         // do the disassembly
-        std::cout << "Disassembly not yet implemented." << std::endl;
-        
+        Disassembler8080 debug8080(&rom);
+        debug8080.reset(0x0000); //start at address 0x0000
+        try {
+            // processor will disassemble until the end of memory
+            while (debug8080.getState()->pc <= rom.getHighAddress()) {
+                debug8080.step();
+            }
+        } catch (const std::exception& e) {
+            // processor throws excptions on illegal memory read
+            // and on unknown opcode
+            std::cerr << e.what() << std::endl;
+            return 1;
+        }
+
     }
 
     //std::cout << "Filename: " << args->romFileName << std::endl;

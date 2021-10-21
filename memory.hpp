@@ -2,6 +2,9 @@
  * Template class for Memory objects for use in vintage computer emulators
  */
 
+#ifndef MEMORY_HPP
+#define MEMORY_HPP
+
 #include <vector>
 #include <cstdint>
 #include <memory>
@@ -34,6 +37,7 @@ class Memory {
 };
 
 // derived class for space invaders, use to set up rom range and mirroring
+/* ~TODO~ */
 class SpaceInvaderMemory : public Memory {
     public:
         SpaceInvaderMemory(std::unique_ptr<std::vector<uint8_t>> code);
@@ -41,3 +45,5 @@ class SpaceInvaderMemory : public Memory {
         void write(uint8_t word, uint16_t address) override;
     private:
 };
+
+#endif
