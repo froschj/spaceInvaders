@@ -1,5 +1,5 @@
-disassemble:	disassemble.o memory.o disassembler.o
-	g++ disassemble.o memory.o disassembler.o -o disassemble
+emulate8080:	disassemble.o memory.o disassembler.o
+	g++ disassemble.o memory.o disassembler.o -o emulate8080
 
 disassemble.o:	disassemble.cpp
 	g++ -c disassemble.cpp -I./ -std=c++17 

@@ -13,6 +13,8 @@
 #include "memory.hpp"
 #include "processor.hpp"
 #include "disassembler.hpp"
+#include <vector>
+#include <string>
 
 #ifdef WINDOWS
 #define TCLAP_NAMESTARTSTRING "~~"
@@ -27,7 +29,7 @@ const int DISPLAY_WIDTH = 16;
  * Struct holding the arguments retrieved from the command line
  */
 struct disassembleArguments {
-    bool isHexDumpMode;
+    std::string commandName;
     std::string romFileName;
 };
 
@@ -76,7 +78,7 @@ int main(int argc, char *argv[]) {
     // move buffer into Memory object
     Memory rom(std::move(tempROM));
 
-    if (args->isHexDumpMode){
+    if (args->commandName == "hexdump"){
         // print the hex dump
         char printable[DISPLAY_WIDTH + 1];
         printable[DISPLAY_WIDTH] = '\0';
@@ -101,7 +103,7 @@ int main(int argc, char *argv[]) {
         }
         std::cout << printable;
         std::cout << std::endl;
-    } else {
+    } else if (args->commandName == "disassemble") {
         // do the disassembly
         Disassembler8080 debug8080(&rom);
         debug8080.reset(0x0000); //start at address 0x0000
@@ -117,6 +119,8 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
+    } else if (args->commandName == "debug") {
+        
     }
 
     //std::cout << "Filename: " << args->romFileName << std::endl;
@@ -133,8 +137,7 @@ std::unique_ptr <struct disassembleArguments> parseArguments(
     int argumentCount, char *argumentVector[]
 ) {
     std::string romFileName;
-    bool isHexDumpMode;
-
+    std::string commmandName;
     try {
         // TCLAP Parser
         TCLAP::CmdLine cmd(
@@ -143,6 +146,22 @@ std::unique_ptr <struct disassembleArguments> parseArguments(
             "0.1",
             true
         );
+
+        // define a required argument for "commands"
+        std::vector<std::string> commands;
+        commands.push_back("hexdump");
+        commands.push_back("disassemble");
+        commands.push_back("debug");
+        TCLAP::ValuesConstraint<std::string> commandValues(commands);
+        TCLAP::UnlabeledValueArg<std::string> commandArg(
+            "command",
+            "name of command to run",
+            true,
+            "hexdump",
+            &commandValues
+        );
+        cmd.add(commandArg);
+        
 
         // Argument for file name to load ROM from
         TCLAP::UnlabeledValueArg<std::string> romFileNameArg(
@@ -154,18 +173,10 @@ std::unique_ptr <struct disassembleArguments> parseArguments(
         );
         cmd.add(romFileNameArg);
 
-        // Argument for setting hex output mode
-        TCLAP::SwitchArg binaryListSwitch(
-            "l",
-            "list",
-            "list file in hexadecimal"
-        );
-
         // Run the parser and extract the values
-        cmd.add(binaryListSwitch);
         cmd.parse(argumentCount, argumentVector);
         romFileName = romFileNameArg.getValue();
-        isHexDumpMode = binaryListSwitch.getValue();
+        commmandName = commandArg.getValue();
     } 
     catch (TCLAP::ArgException &e){ 
         // if something went wrong, print an error message and return nullptr
@@ -181,6 +192,6 @@ std::unique_ptr <struct disassembleArguments> parseArguments(
     std::unique_ptr<struct disassembleArguments> args = 
         std::make_unique<struct disassembleArguments>();
     args->romFileName = romFileName;
-    args->isHexDumpMode = isHexDumpMode;
+    args->commandName = commmandName;
     return args;
 }
