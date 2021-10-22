@@ -98,7 +98,7 @@ class Emulator8080 :
 
         void buildMap(); // populate the lookup table
 
-        uint16_t readAddress(uint16_t atAddress);
+        uint16_t readAddressFromMemory(uint16_t atAddress);
         void moveImmediateData(uint8_t &destination, uint8_t data);
         uint16_t getBC();
         uint16_t getDE();

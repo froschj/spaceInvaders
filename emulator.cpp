@@ -173,7 +173,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.insert( { 0x31, 
         [this](){
-            uint16_t newStackPointer = this->readAddress(this->state.pc + 1); 
+            uint16_t newStackPointer = this->readAddressFromMemory(this->state.pc + 1); 
             this->state.sp = newStackPointer; 
             this->state.pc += 3;
             return 10; 
@@ -195,7 +195,7 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0xc2, 
         [this](){
             if (!this->state.isFlag(State8080::Z)) {
-                uint16_t jumpAddress = this->readAddress(this->state.pc + 1); 
+                uint16_t jumpAddress = this->readAddressFromMemory(this->state.pc + 1); 
                 this->state.pc = jumpAddress;
             } else {
                 this->state.pc += 3;
@@ -208,7 +208,18 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.insert( { 0xc3, 
         [this](){
-            uint16_t jumpAddress = this->readAddress(this->state.pc + 1); 
+            uint16_t jumpAddress = this->readAddressFromMemory(this->state.pc + 1); 
+            this->state.pc = jumpAddress; 
+            return 10; 
+        } 
+    } );
+    // RET (0xc9) PC.lo <- (sp); PC.hi<-(sp+1); SP <- SP+2
+    // 10 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xc9, 
+        [this](){
+            uint16_t jumpAddress = this->readAddressFromMemory(this->state.sp);
+            this->state.sp += 2; 
             this->state.pc = jumpAddress; 
             return 10; 
         } 
@@ -219,14 +230,14 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0xcd, 
         [this](){
             // read destination address do call actions
-            this->callAddress(this->readAddress(this->state.pc + 1));
+            this->callAddress(this->readAddressFromMemory(this->state.pc + 1));
             return 17; 
         } 
     } );
 }
 
 // read an address stored starting at atAddress
-uint16_t Emulator8080::readAddress(uint16_t atAddress) {
+uint16_t Emulator8080::readAddressFromMemory(uint16_t atAddress) {
     uint16_t lsb = this->memory->read(atAddress);
     uint16_t msb = this->memory->read(atAddress + 1) << 8;
     return msb + lsb;
