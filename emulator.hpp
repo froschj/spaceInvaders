@@ -109,6 +109,7 @@ class Emulator8080 :
         void updateParityFlag(uint8_t value);
 
         uint8_t decrement(uint8_t value);
+        uint8_t subtract(uint8_t minuend, uint8_t subtrahend);
 
         void callAddress(uint16_t address);
                 

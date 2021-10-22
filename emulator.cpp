@@ -95,6 +95,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, AC
     opcodes.insert( { 0x05, 
         [this](){
+            // decrement(uint8_t) decrements and sets flags
             this->state.b = this->decrement(this->state.b);
             ++this->state.pc;
             return 5;
@@ -173,7 +174,9 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.insert( { 0x31, 
         [this](){
-            uint16_t newStackPointer = this->readAddressFromMemory(this->state.pc + 1); 
+            // readAddressFromMemory(uint16_t) accouts for little-endian storage
+            uint16_t newStackPointer = 
+                this->readAddressFromMemory(this->state.pc + 1); 
             this->state.sp = newStackPointer; 
             this->state.pc += 3;
             return 10; 
@@ -185,8 +188,8 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0x36, 
         [this](){ 
             this->memory->write(
-                this->memory->read(this->state.pc + 1),
-                this->getHL()
+                this->memory->read(this->state.pc + 1), // immediate value
+                this->getHL() // memory address in paired register
             );
             this->state.pc += 2;
             return 10; 
@@ -198,6 +201,16 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0x77, 
         [this](){
             this->memory->write(this->state.a, this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
+    // MOV A,H (0x7c) A <- H
+    // 5 cycles, 1 byte
+    //no flags
+    opcodes.insert( { 0x7c, 
+        [this](){
+            this->state.a = this->state.h;
             ++this->state.pc;
             return 7; 
         } 
@@ -245,6 +258,20 @@ void Emulator8080::buildMap() {
             // read destination address do call actions
             this->callAddress(this->readAddressFromMemory(this->state.pc + 1));
             return 17; 
+        } 
+    } );
+    // CPI (0xfe) A - data
+    // 7 cycles, 2 bytes
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xfe, 
+        [this](){
+            // diregard return value, we only need flags set for CPI
+            this->subtract(
+                this->state.a, // minuend
+                this->memory->read(this->state.pc + 1) //subtrahend
+            );
+            this->state.pc += 2;
+            return 7; 
         } 
     } );
 }
@@ -344,4 +371,30 @@ uint8_t Emulator8080::decrement(uint8_t value) {
     }*/
     this->state.unSetFlag(State8080::AC);
     return value; // return the decremented value
+}
+
+// subtract subtrahend from minuend, set Z, S, P, CY, AC flags
+// return minuend - subtrahend
+uint8_t Emulator8080::subtract(uint8_t minuend, uint8_t subtrahend) {
+
+    // do the subtraction upcast to uint16_t in order to capture carry bit
+    uint16_t result = minuend - subtrahend;
+    // get the 1-byte difference
+    uint8_t difference = result & 0x00ff;
+    // set flags based on result of operation
+    this->updateZeroFlag(difference);
+    this->updateSignFlag(difference);
+    this->updateParityFlag(difference);
+
+    // AC flag only set for addition
+    this->state.unSetFlag(State8080::AC);
+    
+    // determine state of carry flag
+    if (result & 0x0100) { //0b0000'0001'0000'0000 mask
+        this->state.setFlag(State8080::CY);
+    } else {
+        this->state.unSetFlag(State8080::CY);
+    }
+
+    return difference;
 }
