@@ -90,7 +90,17 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
-    // MVI B (0x06): B <- byte 2
+    // DCR B (0x05) B <- B-1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x05, 
+        [this](){
+            this->state.b = this->decrement(this->state.b);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
+    // MVI B (0x06): B <- byte 2:
     // 7 cycles, 2 bytes
     // no flags
     opcodes.insert( { 0x06, 
@@ -228,20 +238,69 @@ void Emulator8080::callAddress(uint16_t address) {
     this->state.pc = address;
 }
 
+// pair the BC registers into a 2-byte value
 uint16_t Emulator8080::getBC() {
     uint16_t msb = this->state.b << 8;
     uint16_t lsb = this->state.c;
     return msb + lsb;
 }
 
+// pair the DE registers into a 2-byte value
 uint16_t Emulator8080::getDE() {
     uint16_t msb = this->state.d << 8;
     uint16_t lsb = this->state.e;
     return msb + lsb;
 }
 
+// pair the HL registers into a 2-byte value
 uint16_t Emulator8080::getHL() {
     uint16_t msb = this->state.h << 8;
     uint16_t lsb = this->state.l;
     return msb + lsb;
+}
+
+// determine state of Z flag
+void Emulator8080::updateZeroFlag(uint8_t value) {
+    if ( value == 0x00 ) { // compare to zero
+        this->state.setFlag(State8080::Z);
+    } else {
+        this->state.unSetFlag(State8080::Z);
+    }
+}
+
+// determine state of S flag
+void Emulator8080::updateSignFlag(uint8_t value) {
+    if ( value & 0x80 ) { // 0b1000'0000
+        this->state.setFlag(State8080::S);
+    } else {
+        this->state.unSetFlag(State8080::S);
+    }
+}
+
+// determine state of S flag
+void Emulator8080::updateParityFlag(uint8_t value) {
+    // https://www.freecodecamp.org/news/algorithmic-problem-solving-efficiently-computing-the-parity-of-a-stream-of-numbers-cd652af14643/
+    value ^= value >> 4;
+    value ^= value >> 2;
+    value ^= value >> 1;
+    if ( value & 0x01 ) { // 0b0000'0001
+        this->state.setFlag(State8080::S);
+    } else {
+        this->state.unSetFlag(State8080::S);
+    }
+}
+
+// decrement a value, set Z S P AC flags
+uint8_t Emulator8080::decrement(uint8_t value) {
+    uint8_t nibble = 0x0f & value; 
+    --value;
+    this->updateZeroFlag(value);
+    this->updateSignFlag(value);
+    this->updateParityFlag(value);
+    if (0x10 & (nibble + 0x0f)) {
+        this->state.setFlag(State8080::AC);
+    } else {
+        this->state.setFlag(State8080::AC);
+    }
+    return value;
 }

@@ -36,15 +36,15 @@ struct State8080 : State {
             return temp;
         }
         const uint8_t flagMasks[5] = {
-            0b1000'0000,    // Z
-            0b0100'0000,    // S
-            0b0010'0000,    // P
-            0b0001'0000,    // CY
-            0b0000'1000     // AC
+            0b1000'0000,    // S
+            0b0100'0000,    // Z
+            0b0001'0000,    // AC
+            0b0000'0100,    // P
+            0b0000'0001     // CY
         };
-        uint8_t flagsRegister = 0;
+        uint8_t flagsRegister = 0b0000'0010;
     public:
-        enum flag {Z,S,P,CY,AC};
+        enum flag {S,Z,AC,P,CY};
         std::unique_ptr<struct State8080> clone() const {
             return std::unique_ptr<struct State8080>(doClone());
         }
@@ -103,6 +103,12 @@ class Emulator8080 :
         uint16_t getBC();
         uint16_t getDE();
         uint16_t getHL();
+
+        void updateZeroFlag(uint8_t value);
+        void updateSignFlag(uint8_t value);
+        void updateParityFlag(uint8_t value);
+
+        uint8_t decrement(uint8_t value);
 
         void callAddress(uint16_t address);
                 
