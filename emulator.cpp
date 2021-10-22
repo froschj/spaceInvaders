@@ -86,7 +86,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.insert( { 0x00, 
         [this](){ 
-            ++this->state.pc; 
+            ++this->state.pc; // do nothin but advance pc
             return 4; 
         } 
     } );
@@ -330,9 +330,8 @@ void Emulator8080::updateParityFlag(uint8_t value) {
 
 // decrement a value, set Z S P AC flags
 uint8_t Emulator8080::decrement(uint8_t value) {
-    uint8_t nibble = 0x0f & value; 
-    --value;
-
+    --value; 
+    // set flags based on result of operation
     this->updateZeroFlag(value);
     this->updateSignFlag(value);
     this->updateParityFlag(value);
@@ -344,5 +343,5 @@ uint8_t Emulator8080::decrement(uint8_t value) {
         this->state.unSetFlag(State8080::AC);
     }*/
     this->state.unSetFlag(State8080::AC);
-    return value;
+    return value; // return the decremented value
 }
