@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 
     // create a buffer and read into it
     std::unique_ptr<std::vector<uint8_t>> tempROM = 
-        std::make_unique<std::vector<uint8_t>> (0x2400);
+        std::make_unique<std::vector<uint8_t>> (0x4000);
     romFile.read(reinterpret_cast<char*>(tempROM->data()), romLength);
     if (romFile.fail()){
         std::cerr << "Error reading file." << std::endl;

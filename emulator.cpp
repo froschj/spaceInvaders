@@ -105,7 +105,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.insert( { 0x06, 
         [this](){ 
-            this->state.b = memory->read(this->state.pc + 1);
+            this->state.b = this->memory->read(this->state.pc + 1);
             this->state.pc +=2;
             return 7; 
         } 
@@ -176,6 +176,19 @@ void Emulator8080::buildMap() {
             uint16_t newStackPointer = this->readAddressFromMemory(this->state.pc + 1); 
             this->state.sp = newStackPointer; 
             this->state.pc += 3;
+            return 10; 
+        } 
+    } );
+    // MVI M (0x36) (HL) <- byte 2:
+    // 10 cycles, 2 bytes
+    // no flags
+    opcodes.insert( { 0x36, 
+        [this](){ 
+            this->memory->write(
+                this->memory->read(this->state.pc + 1),
+                this->getHL()
+            );
+            this->state.pc += 2;
             return 10; 
         } 
     } );
