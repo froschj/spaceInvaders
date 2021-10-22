@@ -189,6 +189,20 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // JNZ (0xc2) if NZ, PC <- adr
+    // 10 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0xc2, 
+        [this](){
+            if (!this->state.isFlag(State8080::Z)) {
+                uint16_t jumpAddress = this->readAddress(this->state.pc + 1); 
+                this->state.pc = jumpAddress;
+            } else {
+                this->state.pc += 3;
+            }
+            return 10; 
+        } 
+    } );
     // JMP (0xc3) PC <= adr: 
     // 10 cycles, 3 bytes
     // no flags
@@ -284,9 +298,9 @@ void Emulator8080::updateParityFlag(uint8_t value) {
     value ^= value >> 2;
     value ^= value >> 1;
     if ( value & 0x01 ) { // 0b0000'0001
-        this->state.setFlag(State8080::S);
+        this->state.unSetFlag(State8080::P); // odd parity
     } else {
-        this->state.unSetFlag(State8080::S);
+        this->state.setFlag(State8080::P); // even parity
     }
 }
 
@@ -294,13 +308,17 @@ void Emulator8080::updateParityFlag(uint8_t value) {
 uint8_t Emulator8080::decrement(uint8_t value) {
     uint8_t nibble = 0x0f & value; 
     --value;
+
     this->updateZeroFlag(value);
     this->updateSignFlag(value);
     this->updateParityFlag(value);
+    /* AC flag only set for addition on the 8080 per
+    http://www.uyar.com/files/301/ch2.pdf
     if (0x10 & (nibble + 0x0f)) {
         this->state.setFlag(State8080::AC);
     } else {
-        this->state.setFlag(State8080::AC);
-    }
+        this->state.unSetFlag(State8080::AC);
+    }*/
+    this->state.unSetFlag(State8080::AC);
     return value;
 }
