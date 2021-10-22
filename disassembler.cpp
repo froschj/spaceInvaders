@@ -85,7 +85,7 @@ Disassembler8080::OpcodePtr Disassembler8080::decode(uint8_t word) {
         badOpcode << HEX_SIGIL 
             << std::setw(2) << std::hex << std::setfill('0') 
             << static_cast<int>(word);
-        throw UnimplememntedInstructionError(
+        throw UnimplementedInstructionError(
             badAddress.str(),
             badOpcode.str()
         );

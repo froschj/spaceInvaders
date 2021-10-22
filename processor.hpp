@@ -30,11 +30,11 @@ class MemoryReadError : public std::exception {
  * A meaningful exception to throw if the "processor" encounters an
  * unknown or unimplemented opcode
  */
-class UnimplememntedInstructionError : public std::exception {
+class UnimplementedInstructionError : public std::exception {
     private:
         std::string msg;
     public:
-        UnimplememntedInstructionError(
+        UnimplementedInstructionError(
                 const std::string& address,
                 const std::string& opcode 
         ) : 
