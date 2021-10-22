@@ -111,6 +111,19 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // INX D (0x13) DE <- DE + 1:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x13, 
+        [this](){
+            uint16_t DE = this->getDE();
+            ++DE;
+            this->state.d = static_cast<uint8_t>((DE & 0xff00) >> 8);
+            this->state.e = static_cast<uint8_t>(DE & 0x00ff);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
     // LDAX D (0x1a) A <- (DE): 
     // 7 cycles, 1 byte
     // no flags
@@ -130,6 +143,19 @@ void Emulator8080::buildMap() {
             this->state.l = this->memory->read(this->state.pc + 1); 
             this->state.pc += 3;
             return 10; 
+        } 
+    } );
+    // INX H (0x23) HL <- HL + 1:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x23, 
+        [this](){
+            uint16_t HL = this->getHL();
+            ++HL;
+            this->state.h = static_cast<uint8_t>((HL & 0xff00) >> 8);
+            this->state.l = static_cast<uint8_t>(HL & 0x00ff);
+            ++this->state.pc;
+            return 5;
         } 
     } );
     // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
