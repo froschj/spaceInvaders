@@ -189,6 +189,16 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // DAD H (0x29) HL = HL + HL
+    // 10 cycles, 1 byte
+    // CY
+    opcodes.insert( { 0x29, 
+        [this](){ 
+            this->doubleAdd(this->getHL());
+            this->state.pc +=1;
+            return 10; 
+        } 
+    } );
     // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
     // 10 cycles, 3 bytes
     // no flags
@@ -457,4 +467,22 @@ uint8_t Emulator8080::subtract(uint8_t minuend, uint8_t subtrahend) {
     }
 
     return difference;
+}
+
+// add a 2-byte addend to HL and store the result in HL
+// set the CY flag if necessary
+void Emulator8080::doubleAdd(uint16_t addend) {
+    // upcast to 4-byte to capture carry bit
+    uint32_t result = this->getHL() + addend;
+    // get the 2-byte sum
+    uint16_t sum = result & 0x0000ffff;
+    // store sum in HL
+    this->state.h = (sum & 0xff00) >> 8;
+    this->state.l = sum & 0x00ff;
+    // determine state of carry flag
+    if (result & 0x00010000) { //0b0000'0000'0000'0001'0000'0000'0000'0000 mask
+        this->state.setFlag(State8080::CY);
+    } else {
+        this->state.unSetFlag(State8080::CY);
+    }
 }
