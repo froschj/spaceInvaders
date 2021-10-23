@@ -58,6 +58,12 @@ struct State8080 : State {
         uint16_t    sp;
         uint16_t    pc;
         uint8_t     getFlags() { return flagsRegister; }
+        void        loadFlags(uint8_t flagByte) {
+            flagsRegister = flagByte;
+            // make sure constant bits are correct
+            flagsRegister &= 0b1101'0111;
+            flagsRegister |= 0b0000'0010;
+        }
         bool isFlag(State8080::flag whichFlag) {
             return static_cast<bool>(flagsRegister & flagMasks[whichFlag]);
         }

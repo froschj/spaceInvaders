@@ -543,6 +543,18 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // POP PSW (0xf1) flags <- (sp); A <- (sp+1); sp <- sp+2
+    // 10 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xf1, 
+        [this](){
+            this->state.loadFlags(this->memory->read(this->state.sp++));
+            this->state.a = this->memory->read(this->state.sp++);
+
+            ++this->state.pc;
+            return 10; 
+        } 
+    } );
     // PUSH PSW (0xf5) (sp-2)<-flags; (sp-1)<-A; sp <- sp - 2
     // 11 cycles, 1 byte
     // no flags
