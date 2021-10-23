@@ -145,6 +145,16 @@ void Emulator8080::buildMap() {
             return 5;
         } 
     } );
+    // DAD D (0x19) HL = HL + DE;
+    // 10 cycles, 1 byte
+    // CY
+    opcodes.insert( { 0x19, 
+        [this](){
+            this->doubleAdd(this->getDE());
+            ++this->state.pc;
+            return 10;
+        } 
+    } );
     // LDAX D (0x1a) A <- (DE): 
     // 7 cycles, 1 byte
     // no flags
