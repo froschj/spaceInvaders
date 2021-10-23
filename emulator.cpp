@@ -90,6 +90,17 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // LXI B (0x01) B <- byte 3, C <- byte 2:
+    // 10 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0x01, 
+        [this](){
+            this->state.b = this->memory->read(this->state.pc + 2);
+            this->state.c = this->memory->read(this->state.pc + 1); 
+            this->state.pc += 3;
+            return 10; 
+        } 
+    } );
     // DCR B (0x05) B <- B-1:
     // 5 cycles, 1 byte
     // Z, S, P, AC
@@ -287,6 +298,19 @@ void Emulator8080::buildMap() {
             uint16_t jumpAddress = this->readAddressFromMemory(this->state.pc + 1); 
             this->state.pc = jumpAddress; 
             return 10; 
+        } 
+    } );
+    // PUSH B (0xc5) (sp-2)<-C; (sp-1)<-B; sp <- sp - 2:
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xc5, 
+        [this](){
+            // push b
+            this->memory->write(this->state.d, --this->state.sp);
+            // push c
+            this->memory->write(this->state.e, --this->state.sp);
+            ++this->state.pc;
+            return 11; 
         } 
     } );
     // RET (0xc9) PC.lo <- (sp); PC.hi<-(sp+1); SP <- SP+2
