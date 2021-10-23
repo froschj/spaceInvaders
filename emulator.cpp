@@ -153,6 +153,25 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // RRC (0x0f) A = A << 1; bit 0 = prev bit 7; CY = prev bit 7:
+    // 4 cycles, 1 bytes
+    // CY
+    opcodes.insert( { 0x0f, 
+        [this](){
+            uint16_t temp = this->state.a << 1;
+            this->state.a = static_cast<uint8_t>(temp & 0x00ff);
+            // wrap the carry bit arround
+            this->state.a |= static_cast<uint8_t>((temp >> 8) & 0x0001);
+            // set the carry flag
+            if (temp & 0x0100) {
+                this->state.setFlag(State8080::CY);
+            } else {
+                this->state.unSetFlag(State8080::CY);
+            }
+            ++this->state.pc;
+            return 4;
+        } 
+    } );
     // LXI D (0x11) D <- byte 3, E <- byte 2: 
     // 10 cycles, 3 bytes
     // no flags
@@ -497,6 +516,19 @@ void Emulator8080::buildMap() {
 
             ++this->state.pc;
             return 4; 
+        } 
+    } );
+    // PUSH PSW (0xf5) (sp-2)<-flags; (sp-1)<-A; sp <- sp - 2
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xf5, 
+        [this](){
+            // push a
+            this->memory->write(this->state.a, --this->state.sp);
+            //push flags
+            this->memory->write(this->state.getFlags(), --this->state.sp);
+            ++this->state.pc;
+            return 11; 
         } 
     } );
     // CPI (0xfe) A - data:
