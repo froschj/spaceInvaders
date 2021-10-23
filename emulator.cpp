@@ -267,12 +267,32 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // MOV D,M (0x56) D <- (HL):
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x56, 
+        [this](){
+            this->state.d = this->memory->read(this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
     // MOV E,M (0x5e) E <- (HL):
     // 7 cycles, 1 byte
     // no flags
     opcodes.insert( { 0x5e, 
         [this](){
             this->state.e = this->memory->read(this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
+    // MOV H,M (0x66) H <- (HL):
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x66, 
+        [this](){
+            this->state.h = this->memory->read(this->getHL());
             ++this->state.pc;
             return 7; 
         } 
@@ -297,12 +317,32 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // MOV A,D (0x7a) A <- D:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x7a, 
+        [this](){
+            this->state.a = this->state.d;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // MOV A,H (0x7c) A <- H
     // 5 cycles, 1 byte
-    //no flags
+    // no flags
     opcodes.insert( { 0x7c, 
         [this](){
             this->state.a = this->state.h;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV A,M (0x7e) A <- (HL):
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x7e, 
+        [this](){
+            this->state.a = this->memory->read(this->getHL());
             ++this->state.pc;
             return 7; 
         } 
