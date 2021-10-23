@@ -501,6 +501,23 @@ void Emulator8080::buildMap() {
             return 11; 
         } 
     } );
+    // ANI (0xe6) A <- A & data:
+    // 7 cycles, 2 bytes
+    // Z, S, P, CY
+    opcodes.insert( { 0xe6, 
+        [this](){
+            this->state.a &= this->memory->read(this->state.pc +1);
+
+            //update flags
+            this->updateZeroFlag(this->state.a);
+            this->updateSignFlag(this->state.a);
+            this->updateParityFlag(this->state.a);
+            this->state.unSetFlag(State8080::CY);
+
+            this->state.pc += 2;
+            return 7; 
+        } 
+    } );
     // XCHG (0xeb) H <-> D; L <-> E:
     // 4 cycles, 1 byte
     // no flags
