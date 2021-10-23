@@ -107,7 +107,7 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0x05, 
         [this](){
             // decrement(uint8_t) decrements and sets flags
-            this->state.b = this->decrement(this->state.b);
+            this->state.b = this->decrementValue(this->state.b);
             ++this->state.pc;
             return 5;
         } 
@@ -127,7 +127,7 @@ void Emulator8080::buildMap() {
     // CY
     opcodes.insert( { 0x09, 
         [this](){
-            this->doubleAdd(this->getBC());
+            this->doubleAddWithHLIntoHL(this->getBC());
             ++this->state.pc;
             return 10;
         } 
@@ -138,7 +138,7 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0x0d, 
         [this](){
             // decrement(uint8_t) decrements and sets flags
-            this->state.c = this->decrement(this->state.c);
+            this->state.c = this->decrementValue(this->state.c);
             ++this->state.pc;
             return 5;
         } 
@@ -201,7 +201,7 @@ void Emulator8080::buildMap() {
     // CY
     opcodes.insert( { 0x19, 
         [this](){
-            this->doubleAdd(this->getDE());
+            this->doubleAddWithHLIntoHL(this->getDE());
             ++this->state.pc;
             return 10;
         } 
@@ -255,7 +255,7 @@ void Emulator8080::buildMap() {
     // CY
     opcodes.insert( { 0x29, 
         [this](){ 
-            this->doubleAdd(this->getHL());
+            this->doubleAddWithHLIntoHL(this->getHL());
             this->state.pc +=1;
             return 10; 
         } 
@@ -418,6 +418,19 @@ void Emulator8080::buildMap() {
             return 11; 
         } 
     } );
+    // ADI (0xc6) A <- A + byte:
+    // 7 cycles, 2 bytes
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xc6, 
+        [this](){
+            this->state.a = 
+                this->addWithAccumulator(
+                    this->memory->read(this->state.pc + 1)
+                );
+            this->state.pc += 2;
+            return 7; 
+        } 
+    } );
     // RET (0xc9) PC.lo <- (sp); PC.hi<-(sp+1); SP <- SP+2
     // 10 cycles, 1 byte
     // no flags
@@ -506,13 +519,8 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY
     opcodes.insert( { 0xe6, 
         [this](){
-            this->state.a &= this->memory->read(this->state.pc +1);
-
-            //update flags
-            this->updateZeroFlag(this->state.a);
-            this->updateSignFlag(this->state.a);
-            this->updateParityFlag(this->state.a);
-            this->state.unSetFlag(State8080::CY);
+            this->state.a = 
+                this->andWithAccumulator(this->memory->read(this->state.pc +1));
 
             this->state.pc += 2;
             return 7; 
@@ -554,7 +562,7 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0xfe, 
         [this](){
             // diregard return value, we only need flags set for CPI
-            this->subtract(
+            this->subtractValues(
                 this->state.a, // minuend
                 this->memory->read(this->state.pc + 1) //subtrahend
             );
@@ -644,7 +652,7 @@ void Emulator8080::updateParityFlag(uint8_t value) {
 }
 
 // decrement a value, set Z S P AC flags
-uint8_t Emulator8080::decrement(uint8_t value) {
+uint8_t Emulator8080::decrementValue(uint8_t value) {
     --value; 
     // set flags based on result of operation
     this->updateZeroFlag(value);
@@ -663,7 +671,7 @@ uint8_t Emulator8080::decrement(uint8_t value) {
 
 // subtract subtrahend from minuend, set Z, S, P, CY, AC flags
 // return minuend - subtrahend
-uint8_t Emulator8080::subtract(uint8_t minuend, uint8_t subtrahend) {
+uint8_t Emulator8080::subtractValues(uint8_t minuend, uint8_t subtrahend) {
 
     // do the subtraction upcast to uint16_t in order to capture carry bit
     uint16_t result = minuend - subtrahend;
@@ -689,7 +697,7 @@ uint8_t Emulator8080::subtract(uint8_t minuend, uint8_t subtrahend) {
 
 // add a 2-byte addend to HL and store the result in HL
 // set the CY flag if necessary
-void Emulator8080::doubleAdd(uint16_t addend) {
+void Emulator8080::doubleAddWithHLIntoHL(uint16_t addend) {
     // upcast to 4-byte to capture carry bit
     uint32_t result = this->getHL() + addend;
     // get the 2-byte sum
@@ -703,4 +711,44 @@ void Emulator8080::doubleAdd(uint16_t addend) {
     } else {
         this->state.unSetFlag(State8080::CY);
     }
+}
+
+uint8_t Emulator8080::andWithAccumulator(uint8_t value) {
+    uint8_t result = this->state.a & value; 
+    //update flags
+    this->updateZeroFlag(result);
+    this->updateSignFlag(result);
+    this->updateParityFlag(result);
+    this->state.unSetFlag(State8080::CY);
+
+    return result;
+}
+
+uint8_t Emulator8080::addWithAccumulator(uint8_t addend) {
+    // do addition upcast to capture carry bit
+    uint16_t result = this->state.a + addend;
+
+    uint8_t sum = result & 0x00ff; // extract 1-byte sum
+
+    // update flags
+    this->updateZeroFlag(sum);
+    this->updateSignFlag(sum);
+    this->updateParityFlag(sum);
+
+    // check AC flag since this is an add
+    // sum the low nibbles and see if this makes a carry into the high nibble
+    if (0x10 & ((this->state.a & 0x0f) + (addend & 0x0f))) { // low nibble sum
+        this->state.setFlag(State8080::AC);
+    } else {
+        this->state.unSetFlag(State8080::AC);
+    }
+
+    // determine state of carry flag
+    if (result & 0x0100) { //0b0000'0001'0000'0000 mask
+        this->state.setFlag(State8080::CY);
+    } else {
+        this->state.unSetFlag(State8080::CY);
+    }
+
+    return sum;
 }
