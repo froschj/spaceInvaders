@@ -310,19 +310,40 @@ void Emulator8080::buildMap() {
             return 17; 
         } 
     } );
+    // OUT (0xd3) special
+    // 10 cycles, 2 bytes
+    // no flags
+    opcodes.insert( { 0xd3, 
+        [this](){
+            // ** TO DO **
+            this->state.pc += 2;
+            return 10; 
+        } 
+    } );
     // PUSH D (0xd5) (sp-2)<-E; (sp-1)<-D; sp <- sp - 2:
     // 11 cycles, 1 byte
     // no flags
     opcodes.insert( { 0xd5, 
         [this](){
             // push d
-            --this->state.sp;
-            this->memory->write(this->state.d, this->state.sp);
+            this->memory->write(this->state.d, --this->state.sp);
             // push e
-            --this->state.sp;
-            this->memory->write(this->state.e, this->state.sp);
+            this->memory->write(this->state.e, --this->state.sp);
             ++this->state.pc;
             return 11; 
+        } 
+    } );
+    // POP H (0xe1) L <- (sp); H <- (sp+1); sp <- sp+2
+    // 10 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xe1, 
+        [this](){
+            // pop into l
+            this->state.l = this->memory->read(this->state.sp++);
+            // pop into h
+            this->state.h = this->memory->read(this->state.sp++);
+            ++this->state.pc;
+            return 10; 
         } 
     } );
     // PUSH H (0xe5) (sp-2)<-L; (sp-1)<-H; sp <- sp - 2:
@@ -331,13 +352,28 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0xe5, 
         [this](){
             // push h
-            --this->state.sp;
-            this->memory->write(this->state.h, this->state.sp);
+            this->memory->write(this->state.h, --this->state.sp);
             // push l
-            --this->state.sp;
-            this->memory->write(this->state.l, this->state.sp);
+            this->memory->write(this->state.l, --this->state.sp);
             ++this->state.pc;
             return 11; 
+        } 
+    } );
+    // XCHG (0xeb) H <-> D; L <-> E:
+    // 4 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xeb, 
+        [this](){
+            uint8_t temp = this->state.h;
+            this->state.h = this->state.d;
+            this->state.d = temp;
+
+            temp = this->state.l;
+            this->state.l = this->state.e;
+            this->state.e = temp;
+
+            ++this->state.pc;
+            return 4; 
         } 
     } );
     // CPI (0xfe) A - data:
