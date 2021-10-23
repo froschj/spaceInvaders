@@ -132,6 +132,17 @@ void Emulator8080::buildMap() {
             return 10;
         } 
     } );
+    // DCR C (0x0d) C <-C-1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x0d, 
+        [this](){
+            // decrement(uint8_t) decrements and sets flags
+            this->state.c = this->decrement(this->state.c);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
     // MVI C (0x0e) C <- byte 2:
     // 7 cycles, 2 bytes
     // no flags
@@ -254,6 +265,16 @@ void Emulator8080::buildMap() {
             );
             this->state.pc += 2;
             return 10; 
+        } 
+    } );
+    // MOV E,M (0x5e) E <- (HL):
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x5e, 
+        [this](){
+            this->state.e = this->memory->read(this->getHL());
+            ++this->state.pc;
+            return 7; 
         } 
     } );
     // MOV L,A (0x6f) L <- A:
