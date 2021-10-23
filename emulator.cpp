@@ -111,6 +111,16 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // MVI C (0x0e) C <- byte 2:
+    // 7 cycles, 2 bytes
+    // no flags
+    opcodes.insert( { 0x0e, 
+        [this](){ 
+            this->state.c = this->memory->read(this->state.pc + 1);
+            this->state.pc +=2;
+            return 7; 
+        } 
+    } );
     // LXI D (0x11) D <- byte 3, E <- byte 2: 
     // 10 cycles, 3 bytes
     // no flags
@@ -388,7 +398,7 @@ uint8_t Emulator8080::subtract(uint8_t minuend, uint8_t subtrahend) {
 
     // AC flag only set for addition
     this->state.unSetFlag(State8080::AC);
-    
+
     // determine state of carry flag
     if (result & 0x0100) { //0b0000'0001'0000'0000 mask
         this->state.setFlag(State8080::CY);
