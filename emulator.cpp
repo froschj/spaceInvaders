@@ -179,6 +179,16 @@ void Emulator8080::buildMap() {
             return 5;
         } 
     } );
+    // MVI H (0x26) H <- byte 2:
+    // 7 cycles, 2 bytes
+    // no flags
+    opcodes.insert( { 0x26, 
+        [this](){ 
+            this->state.h = this->memory->read(this->state.pc + 1);
+            this->state.pc +=2;
+            return 7; 
+        } 
+    } );
     // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
     // 10 cycles, 3 bytes
     // no flags
