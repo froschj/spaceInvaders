@@ -286,6 +286,28 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // LDA (0x3a) A <- (adr):
+    // 13 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0x3a, 
+        [this](){
+            this->state.a = this->memory->read(
+                this->readAddressFromMemory(this->state.pc + 1)
+            );
+            this->state.pc += 3;
+            return 13; 
+        } 
+    } );
+    // MVI A (0x3e) A <- byte 2
+    // 7 cycles, 2 bytes
+    // no flags
+    opcodes.insert( { 0x3e, 
+        [this](){ 
+            this->state.a = this->memory->read(this->state.pc + 1);
+            this->state.pc +=2;
+            return 7; 
+        } 
+    } );
     // MOV D,M (0x56) D <- (HL):
     // 7 cycles, 1 byte
     // no flags
