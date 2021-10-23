@@ -359,6 +359,19 @@ void Emulator8080::buildMap() {
             return 17; 
         } 
     } );
+    // POP D (0xd1) E <- (sp); D <- (sp+1); sp <- sp+2:
+    // 10 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xd1, 
+        [this](){
+            // pop e
+            this->state.e = this->memory->read(this->state.sp++);
+            // pop d
+            this->state.d = this->memory->read(this->state.sp++);
+            ++this->state.pc; 
+            return 10; 
+        } 
+    } );
     // OUT (0xd3) special
     // 10 cycles, 2 bytes
     // no flags
