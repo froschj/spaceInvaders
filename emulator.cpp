@@ -122,6 +122,16 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // DAD B (0x09) HL = HL + BC:
+    // 10 cycles, 1 byte
+    // CY
+    opcodes.insert( { 0x09, 
+        [this](){
+            this->doubleAdd(this->getBC());
+            ++this->state.pc;
+            return 10;
+        } 
+    } );
     // MVI C (0x0e) C <- byte 2:
     // 7 cycles, 2 bytes
     // no flags
@@ -282,11 +292,25 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0xc2, 
         [this](){
             if (!this->state.isFlag(State8080::Z)) {
-                uint16_t jumpAddress = this->readAddressFromMemory(this->state.pc + 1); 
+                uint16_t jumpAddress = 
+                    this->readAddressFromMemory(this->state.pc + 1); 
                 this->state.pc = jumpAddress;
             } else {
                 this->state.pc += 3;
             }
+            return 10; 
+        } 
+    } );
+    // POP B (0xc1) C <- (sp); B <- (sp+1); sp <- sp+2:
+    // 10 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xc1, 
+        [this](){
+            // pop c
+            this->state.c = this->memory->read(this->state.sp++);
+            // pop b
+            this->state.b = this->memory->read(this->state.sp++);
+            ++this->state.pc; 
             return 10; 
         } 
     } );
@@ -295,7 +319,8 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.insert( { 0xc3, 
         [this](){
-            uint16_t jumpAddress = this->readAddressFromMemory(this->state.pc + 1); 
+            uint16_t jumpAddress = 
+                this->readAddressFromMemory(this->state.pc + 1); 
             this->state.pc = jumpAddress; 
             return 10; 
         } 
@@ -306,9 +331,9 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0xc5, 
         [this](){
             // push b
-            this->memory->write(this->state.d, --this->state.sp);
+            this->memory->write(this->state.b, --this->state.sp);
             // push c
-            this->memory->write(this->state.e, --this->state.sp);
+            this->memory->write(this->state.c, --this->state.sp);
             ++this->state.pc;
             return 11; 
         } 
