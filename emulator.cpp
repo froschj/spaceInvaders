@@ -270,7 +270,37 @@ void Emulator8080::buildMap() {
             return 17; 
         } 
     } );
-    // CPI (0xfe) A - data
+    // PUSH D (0xd5) (sp-2)<-E; (sp-1)<-D; sp <- sp - 2:
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xd5, 
+        [this](){
+            // push d
+            --this->state.sp;
+            this->memory->write(this->state.d, this->state.sp);
+            // push e
+            --this->state.sp;
+            this->memory->write(this->state.e, this->state.sp);
+            ++this->state.pc;
+            return 11; 
+        } 
+    } );
+    // PUSH H (0xe5) (sp-2)<-L; (sp-1)<-H; sp <- sp - 2:
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xe5, 
+        [this](){
+            // push h
+            --this->state.sp;
+            this->memory->write(this->state.h, this->state.sp);
+            // push l
+            --this->state.sp;
+            this->memory->write(this->state.l, this->state.sp);
+            ++this->state.pc;
+            return 11; 
+        } 
+    } );
+    // CPI (0xfe) A - data:
     // 7 cycles, 2 bytes
     // Z, S, P, CY, AC
     opcodes.insert( { 0xfe, 
