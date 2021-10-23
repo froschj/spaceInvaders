@@ -86,16 +86,27 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.insert( { 0x00, 
         [this](){ 
-            ++this->state.pc; 
+            ++this->state.pc; // do nothin but advance pc
             return 4; 
         } 
     } );
-    // MVI B (0x06): B <- byte 2
+    // DCR B (0x05) B <- B-1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x05, 
+        [this](){
+            // decrement(uint8_t) decrements and sets flags
+            this->state.b = this->decrement(this->state.b);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
+    // MVI B (0x06): B <- byte 2:
     // 7 cycles, 2 bytes
     // no flags
     opcodes.insert( { 0x06, 
         [this](){ 
-            this->state.b = memory->read(this->state.pc + 1);
+            this->state.b = this->memory->read(this->state.pc + 1);
             this->state.pc +=2;
             return 7; 
         } 
@@ -109,6 +120,19 @@ void Emulator8080::buildMap() {
             this->state.e = this->memory->read(this->state.pc + 1); 
             this->state.pc += 3;
             return 10; 
+        } 
+    } );
+    // INX D (0x13) DE <- DE + 1:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x13, 
+        [this](){
+            uint16_t DE = this->getDE();
+            ++DE;
+            this->state.d = static_cast<uint8_t>((DE & 0xff00) >> 8);
+            this->state.e = static_cast<uint8_t>(DE & 0x00ff);
+            ++this->state.pc;
+            return 5;
         } 
     } );
     // LDAX D (0x1a) A <- (DE): 
@@ -132,14 +156,42 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // INX H (0x23) HL <- HL + 1:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x23, 
+        [this](){
+            uint16_t HL = this->getHL();
+            ++HL;
+            this->state.h = static_cast<uint8_t>((HL & 0xff00) >> 8);
+            this->state.l = static_cast<uint8_t>(HL & 0x00ff);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
     // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
     // 10 cycles, 3 bytes
     // no flags
     opcodes.insert( { 0x31, 
         [this](){
-            uint16_t newStackPointer = this->readAddress(this->state.pc + 1); 
+            // readAddressFromMemory(uint16_t) accouts for little-endian storage
+            uint16_t newStackPointer = 
+                this->readAddressFromMemory(this->state.pc + 1); 
             this->state.sp = newStackPointer; 
             this->state.pc += 3;
+            return 10; 
+        } 
+    } );
+    // MVI M (0x36) (HL) <- byte 2:
+    // 10 cycles, 2 bytes
+    // no flags
+    opcodes.insert( { 0x36, 
+        [this](){ 
+            this->memory->write(
+                this->memory->read(this->state.pc + 1), // immediate value
+                this->getHL() // memory address in paired register
+            );
+            this->state.pc += 2;
             return 10; 
         } 
     } );
@@ -153,12 +205,47 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // MOV A,H (0x7c) A <- H
+    // 5 cycles, 1 byte
+    //no flags
+    opcodes.insert( { 0x7c, 
+        [this](){
+            this->state.a = this->state.h;
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
+    // JNZ (0xc2) if NZ, PC <- adr
+    // 10 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0xc2, 
+        [this](){
+            if (!this->state.isFlag(State8080::Z)) {
+                uint16_t jumpAddress = this->readAddressFromMemory(this->state.pc + 1); 
+                this->state.pc = jumpAddress;
+            } else {
+                this->state.pc += 3;
+            }
+            return 10; 
+        } 
+    } );
     // JMP (0xc3) PC <= adr: 
     // 10 cycles, 3 bytes
     // no flags
     opcodes.insert( { 0xc3, 
         [this](){
-            uint16_t jumpAddress = this->readAddress(this->state.pc + 1); 
+            uint16_t jumpAddress = this->readAddressFromMemory(this->state.pc + 1); 
+            this->state.pc = jumpAddress; 
+            return 10; 
+        } 
+    } );
+    // RET (0xc9) PC.lo <- (sp); PC.hi<-(sp+1); SP <- SP+2
+    // 10 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xc9, 
+        [this](){
+            uint16_t jumpAddress = this->readAddressFromMemory(this->state.sp);
+            this->state.sp += 2; 
             this->state.pc = jumpAddress; 
             return 10; 
         } 
@@ -169,14 +256,28 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0xcd, 
         [this](){
             // read destination address do call actions
-            this->callAddress(this->readAddress(this->state.pc + 1));
+            this->callAddress(this->readAddressFromMemory(this->state.pc + 1));
             return 17; 
+        } 
+    } );
+    // CPI (0xfe) A - data
+    // 7 cycles, 2 bytes
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xfe, 
+        [this](){
+            // diregard return value, we only need flags set for CPI
+            this->subtract(
+                this->state.a, // minuend
+                this->memory->read(this->state.pc + 1) //subtrahend
+            );
+            this->state.pc += 2;
+            return 7; 
         } 
     } );
 }
 
 // read an address stored starting at atAddress
-uint16_t Emulator8080::readAddress(uint16_t atAddress) {
+uint16_t Emulator8080::readAddressFromMemory(uint16_t atAddress) {
     uint16_t lsb = this->memory->read(atAddress);
     uint16_t msb = this->memory->read(atAddress + 1) << 8;
     return msb + lsb;
@@ -202,20 +303,98 @@ void Emulator8080::callAddress(uint16_t address) {
     this->state.pc = address;
 }
 
+// pair the BC registers into a 2-byte value
 uint16_t Emulator8080::getBC() {
     uint16_t msb = this->state.b << 8;
     uint16_t lsb = this->state.c;
     return msb + lsb;
 }
 
+// pair the DE registers into a 2-byte value
 uint16_t Emulator8080::getDE() {
     uint16_t msb = this->state.d << 8;
     uint16_t lsb = this->state.e;
     return msb + lsb;
 }
 
+// pair the HL registers into a 2-byte value
 uint16_t Emulator8080::getHL() {
     uint16_t msb = this->state.h << 8;
     uint16_t lsb = this->state.l;
     return msb + lsb;
+}
+
+// determine state of Z flag
+void Emulator8080::updateZeroFlag(uint8_t value) {
+    if ( value == 0x00 ) { // compare to zero
+        this->state.setFlag(State8080::Z);
+    } else {
+        this->state.unSetFlag(State8080::Z);
+    }
+}
+
+// determine state of S flag
+void Emulator8080::updateSignFlag(uint8_t value) {
+    if ( value & 0x80 ) { // 0b1000'0000
+        this->state.setFlag(State8080::S);
+    } else {
+        this->state.unSetFlag(State8080::S);
+    }
+}
+
+// determine state of S flag
+void Emulator8080::updateParityFlag(uint8_t value) {
+    // https://www.freecodecamp.org/news/algorithmic-problem-solving-efficiently-computing-the-parity-of-a-stream-of-numbers-cd652af14643/
+    value ^= value >> 4;
+    value ^= value >> 2;
+    value ^= value >> 1;
+    if ( value & 0x01 ) { // 0b0000'0001
+        this->state.unSetFlag(State8080::P); // odd parity
+    } else {
+        this->state.setFlag(State8080::P); // even parity
+    }
+}
+
+// decrement a value, set Z S P AC flags
+uint8_t Emulator8080::decrement(uint8_t value) {
+    --value; 
+    // set flags based on result of operation
+    this->updateZeroFlag(value);
+    this->updateSignFlag(value);
+    this->updateParityFlag(value);
+    /* AC flag only set for addition on the 8080 per
+    http://www.uyar.com/files/301/ch2.pdf
+    if (0x10 & (nibble + 0x0f)) {
+        this->state.setFlag(State8080::AC);
+    } else {
+        this->state.unSetFlag(State8080::AC);
+    }*/
+    this->state.unSetFlag(State8080::AC);
+    return value; // return the decremented value
+}
+
+// subtract subtrahend from minuend, set Z, S, P, CY, AC flags
+// return minuend - subtrahend
+uint8_t Emulator8080::subtract(uint8_t minuend, uint8_t subtrahend) {
+
+    // do the subtraction upcast to uint16_t in order to capture carry bit
+    uint16_t result = minuend - subtrahend;
+    // get the 1-byte difference
+    uint8_t difference = result & 0x00ff;
+    // set flags based on result of operation
+    this->updateZeroFlag(difference);
+    this->updateSignFlag(difference);
+    this->updateParityFlag(difference);
+
+    // AC flag only set for addition
+    this->state.unSetFlag(State8080::AC);
+    
+    // determine state of carry flag
+    if (result & 0x0100) { //0b0000'0001'0000'0000 mask
+        this->state.setFlag(State8080::CY);
+    } else {
+        this->state.unSetFlag(State8080::CY);
+    }
+
+    return difference;
 }
