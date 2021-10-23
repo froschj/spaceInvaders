@@ -215,6 +215,16 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // MOV L,A (0x6f) L <- A:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x6f, 
+        [this](){
+            this->state.l = this->state.a;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // MOV M,A (0x77) (HL) <- A:
     // 7 cycles, 1 byte
     // no flags
