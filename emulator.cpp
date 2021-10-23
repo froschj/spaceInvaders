@@ -346,6 +346,16 @@ void Emulator8080::buildMap() {
             return 5; 
         } 
     } );
+    // MOV A,E (0x7b) A <- E:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x7b, 
+        [this](){
+            this->state.a = this->state.e;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // MOV A,H (0x7c) A <- H
     // 5 cycles, 1 byte
     // no flags
