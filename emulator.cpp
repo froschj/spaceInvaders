@@ -34,6 +34,12 @@ void Emulator8080::reset(uint16_t address) {
     this->state.pc = address;
 }
 
+void Emulator8080::setMemory(Memory* memoryDevice)
+{
+	memory = memoryDevice;
+	//TODO reset pc address by default?
+}
+
 // fetch, decode, and execute a single instruction
 int Emulator8080::step() {
     // fetch

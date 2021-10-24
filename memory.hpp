@@ -19,7 +19,9 @@ class Memory {
         // write word to address, disegard write protections
         // models "flashing" a ROM
         virtual void load(uint8_t word, uint16_t address); 
-        // create a memory holding a number of words
+		// Constructor
+		Memory();
+		// create a memory holding a number of words
         Memory(int words);
         // create a memory and load information
         Memory(std::unique_ptr<std::vector<uint8_t>> data);
@@ -30,6 +32,8 @@ class Memory {
         uint16_t getLowAddress();
         // high address of memory
         uint16_t getHighAddress();
+		//Update the memory block
+		void setMemoryBlock(std::unique_ptr<std::vector<uint8_t>> data);
     protected:
         int words; // size of memory buffer in words
         uint16_t startOffset; // offset to beginning of address range

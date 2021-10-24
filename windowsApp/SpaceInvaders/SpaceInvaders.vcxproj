@@ -155,8 +155,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\emulator.hpp" />
     <ClInclude Include="..\..\machine.hpp" />
+    <ClInclude Include="..\..\memory.hpp" />
     <ClInclude Include="..\..\platformAdapter.hpp" />
+    <ClInclude Include="..\..\processor.hpp" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="resource1.h" />
@@ -164,7 +167,9 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\emulator.cpp" />
     <ClCompile Include="..\..\machine.cpp" />
+    <ClCompile Include="..\..\memory.cpp" />
     <ClCompile Include="..\..\platformAdapter.cpp" />
     <ClCompile Include="SpaceInvaders.cpp" />
   </ItemGroup>
