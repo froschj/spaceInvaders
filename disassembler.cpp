@@ -2926,7 +2926,7 @@ int Disassembler8080::CNC() {
 //disassemble the PUSH D opcode
 int Disassembler8080::PUSH_D() {
     instructionBytes(state.pc, 1);
-    mnemonic("POP");
+    mnemonic("PUSH");
     outputDevice << "D" << std::endl;
     
     ++state.pc; // advance the pc correctly
@@ -3223,7 +3223,7 @@ int Disassembler8080::RP() {
 //disassemble the POP PSW opcode
 int Disassembler8080::POP_PSW() {
     instructionBytes(state.pc, 1);
-    mnemonic("PUSH");
+    mnemonic("POP");
     outputDevice << "PSW" <<std::endl;
     
     ++state.pc; // advance the pc correctly
