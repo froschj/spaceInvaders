@@ -75,7 +75,7 @@ class Processor {
         // execute an instruction, return # of cycles
         virtual int step() = 0; 
         virtual ~Processor() {}
-        Processor() {}
+        Processor() : memory(0) {}
         std::unique_ptr<stateType> getState() const {
             return state.clone();
         } // return a copy of the current state

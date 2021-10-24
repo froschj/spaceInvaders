@@ -6,6 +6,10 @@
 #include "SpaceInvaders.h"
 #include "platformAdapter.hpp"
 #include "machine.hpp"
+#include "memory.hpp"
+#include "emulator.hpp"
+#include <vector>
+#include <fstream>
 
 #define MAX_LOADSTRING 100
 
@@ -29,9 +33,16 @@ void OnRight();
 void OnFire();
 void OnCoin();
 void PlaySISound(); //Temp sound function
+void DrawScreen(HWND hWnd, HDC hdc);
+
 
 Adapter platformAdapter;
 Machine machine;
+Memory memory;
+Emulator8080 emulator;
+uint8_t* g_videoBuffer;
+
+
 //end declares
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -44,9 +55,52 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // TODO: Place code here.
 
+	//Create gui app video buffer
+	int screenPixelBufferSize = 256 * 224; //57344 total pixels
+	g_videoBuffer = reinterpret_cast<uint8_t*>(std::malloc(screenPixelBufferSize * sizeof(uint8_t)));
+
 	//Connecting machine and platform adapters
 	platformAdapter.setInvoke(&PlaySISound);
 	machine.setPlatformAdapter(&platformAdapter);
+
+	//Create memory block and assign to memory
+	std::unique_ptr<std::vector<uint8_t>> memoryBlock =
+		std::make_unique<std::vector<uint8_t>>(0x4000);
+
+	//Read ROM into the memory
+	std::ifstream romFile;
+	romFile.open("..\\..\\roms\\invaders\\invaders", std::ios::binary);
+	if (romFile.fail()) {
+		std::cerr << "Could not open file: " << "invaders" << std::endl;
+		return 1;
+	}
+
+	// file opened successfully, read it into memory
+	// get the length
+	romFile.seekg(0, romFile.end);
+	int romLength = romFile.tellg();
+	romFile.seekg(0, romFile.beg);
+
+	// create a buffer and read into it
+	romFile.read(reinterpret_cast<char*>(memoryBlock->data()), romLength);
+	if (romFile.fail()) {
+		std::cerr << "Error reading file." << std::endl;
+		return 1;
+	}
+	romFile.close();
+
+	//Assign memory
+	memory.setMemoryBlock(std::move(memoryBlock));
+
+	//Create emulator with assigned memory
+	emulator.connectMemory(&memory);
+	emulator.reset(0x0000);
+
+	//Let's run the emulator some?
+	for (int i = 0; i < 30000; ++i)
+	{
+		int cycles = emulator.step();
+	}
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -119,7 +173,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    //Space Invaders screen: 256x224 pixels
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-	   CW_USEDEFAULT, 0, 300, 600, nullptr, nullptr, hInstance, nullptr);
+	   CW_USEDEFAULT, 0, 224 * 4, 256 * 4, nullptr, nullptr, hInstance, nullptr);
 
 
    if (!hWnd)
@@ -170,15 +224,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Add any drawing code that uses hdc here...
 
-			//TODO replace with Bltbit to draw bitmaps rather than iterate over pixels
-			//test screen drawing
-			for (int x = 0; x < 300; x++)
-			{
-				for (int y = 0; y < 300; y++)
-				{ 
-					SetPixel(hdc, x, y, RGB(rand() % 255, rand() % 255, rand() % 255));
-				}
-			}
+			DrawScreen(hWnd, hdc);
 
             EndPaint(hWnd, &ps);
         }
@@ -281,3 +327,95 @@ void OnLeft()
 	OutputDebugString(_T("On Left Down!\n"));
 
 }
+
+
+void DrawScreen(HWND hWnd, HDC hdc)
+{
+	//Space Invaders screen: 256x224 pixels
+	int height = 256;
+	int width = 224;
+	int byteSize = 1; //Each pixel is 8 bits
+	int bitCount = byteSize * 8; // could be 8, 16, 24, 32, 64 bits per color, only 0/1 from game
+	int totalSize = height * width * byteSize;  // 57,344 total pixels
+
+	//TODO need to rotate screen, just trying to draw it currently
+	//Iterate over each byte of of memory and put bits into video buffer
+	int bufferIndex = 0;
+	for (int i = 0x2400; i < 0x4000; ++i)
+	{
+		
+		uint8_t bitBlock = memory.read(i);
+
+		//bitBlock = 0x65; //Test value 0110 0101, uncomment to verify screen is being drawn
+
+		g_videoBuffer[bufferIndex] = (bitBlock >> 0) & 0x1 ? 255 : 0;  
+		g_videoBuffer[bufferIndex + 1] = (bitBlock >> 1) & 0x1 ? 255 : 0;  
+		g_videoBuffer[bufferIndex + 2] = (bitBlock >> 2) & 0x1 ? 255 : 0; 
+		g_videoBuffer[bufferIndex + 3] = (bitBlock >> 3) & 0x1 ? 255 : 0; 
+		g_videoBuffer[bufferIndex + 4] = (bitBlock >> 4) & 0x1 ? 255 : 0;
+		g_videoBuffer[bufferIndex + 5] = (bitBlock >> 5) & 0x1 ? 255 : 0;
+		g_videoBuffer[bufferIndex + 6] = (bitBlock >> 6) & 0x1 ? 255 : 0;
+		g_videoBuffer[bufferIndex + 7] = (bitBlock >> 7) & 0x1 ? 255 : 0;
+
+		bufferIndex += 8;
+	}
+
+	
+	//int squareSize = 1024;
+
+	BITMAPINFO bi{};
+	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bi.bmiHeader.biWidth = width;
+	bi.bmiHeader.biHeight = -height;
+	bi.bmiHeader.biPlanes = 1;
+	bi.bmiHeader.biBitCount = bitCount;
+	bi.bmiHeader.biCompression = BI_RGB;
+
+
+	//Get current screen size
+	RECT clientRect;
+	GetClientRect(hWnd, &clientRect);
+	int targetWidth = clientRect.right - clientRect.left;
+	int targetHeight = clientRect.bottom - clientRect.top;
+
+	//TODO Find the correct ratio to fit in the screen
+
+	int x = StretchDIBits(hdc, 0, 0, targetWidth, targetHeight, 0, 0, width, height, g_videoBuffer, &bi, DIB_RGB_COLORS, SRCCOPY);
+
+}
+
+/*
+void DrawScreenExample(HDC hdc)
+{
+
+	void* p = VirtualAlloc(NULL, 512 * 512 * 4, MEM_COMMIT, PAGE_READWRITE);
+
+
+	if (p == NULL)
+		return;
+
+	PBYTE bytes = reinterpret_cast<PBYTE>(p);
+	if (bytes == NULL)
+		return;
+
+	for (int i = 0; i < 512 * 512 * 4; ++i)
+	{
+		bytes[i] = rand() % 256;
+	}
+
+
+	BITMAPINFO bi{};
+	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bi.bmiHeader.biWidth = 512;
+	bi.bmiHeader.biHeight = -512;
+	bi.bmiHeader.biPlanes = 1;
+	bi.bmiHeader.biBitCount = 32;
+	bi.bmiHeader.biCompression = BI_RGB;
+	int x = StretchDIBits(hdc, 0, 0, 512, 512, 0, 0, 512, 512, bytes, &bi, DIB_RGB_COLORS, SRCCOPY);
+
+	if (p)
+	{
+		VirtualFree(p, 0, MEM_RELEASE);
+	}
+}
+*/

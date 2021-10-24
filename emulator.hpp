@@ -93,6 +93,7 @@ class Emulator8080 :
         int step() override; // "execute" an instruction
         void reset(uint16_t address = 0x0000); // put the pc at an address
         inline bool isInterruptEnable() { return enableInterrupts; }
+
         // connectMemory(Memory*) provided by paretnt class
 
         // connect a callback for the OUT instruction
@@ -102,6 +103,7 @@ class Emulator8080 :
         // connect a callback for the IN instruction
         // function returns value, argument in port address
         void connectInput(std::function<uint8_t(uint8_t)> inputFunction);
+
     private:
         // fetch instruction at address
         uint8_t fetch(uint16_t address);
@@ -130,7 +132,7 @@ class Emulator8080 :
         uint16_t getDE();
         uint16_t getHL();
 
-        // flag caluclators
+        // flag calculators
         void updateZeroFlag(uint8_t value);
         void updateSignFlag(uint8_t value);
         void updateParityFlag(uint8_t value);
@@ -148,9 +150,9 @@ class Emulator8080 :
         uint8_t xorWithAccumulator(uint8_t value);
         uint8_t orWithAccumulator(uint8_t value);
 
+
         // encapusulate call procedures
         void callAddress(uint16_t address, bool isReset = false);
-                
         bool enableInterrupts;
      
 };
