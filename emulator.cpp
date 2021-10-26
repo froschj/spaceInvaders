@@ -521,7 +521,7 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
-    // CNZ (0xc4) if M, CALL adr
+    // CNZ (0xc4) if if NZ, CALL adr
     // 17 cycles if call; otherwise 11, 3 bytes
     // no flags
     opcodes.insert( { 0xc4, 
@@ -614,21 +614,6 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
-    // XTHL (0xe3) L <-> (SP); H <-> (SP+1)
-    // 18 cycles, 1 byte
-    // no flags
-    opcodes.insert( { 0xe3, 
-        [this](){
-            uint8_t templ = this->state.l;
-            uint8_t temph = this->state.h;
-            this->state.l = this->memory->read(this->state.sp);
-            this->state.h = this->memory->read(this->state.sp + 1);
-            this->memory->write(templ, this->state.sp);
-            this->memory->write(temph, this->state.sp + 1);
-            ++this->state.pc;
-            return 18; 
-        } 
-    } );
     // POP D (0xd1) E <- (sp); D <- (sp+1); sp <- sp+2:
     // 10 cycles, 1 byte
     // no flags
@@ -669,6 +654,23 @@ void Emulator8080::buildMap() {
             );
             this->state.pc += 2;
             return 10; 
+        } 
+    } );
+    // CNC (0xd4) if NCY, CALL adr
+    // 17 cycles if call; otherwise 11, 3 bytes
+    // no flags
+    opcodes.insert( { 0xd4, 
+        [this](){
+            // read destination address do call actions
+            if (!(this->state.isFlag(State8080::CY))) {
+                this->callAddress(
+                    this->readAddressFromMemory(this->state.pc + 1)
+                );
+                return 17; 
+            } else {
+                this->state.pc += 3;
+                return 11;
+            }
         } 
     } );
     // PUSH D (0xd5) (sp-2)<-E; (sp-1)<-D; sp <- sp - 2:
@@ -770,6 +772,21 @@ void Emulator8080::buildMap() {
                 this->state.pc += 3;
             }
             return 10;
+        } 
+    } );
+    // XTHL (0xe3) L <-> (SP); H <-> (SP+1)
+    // 18 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xe3, 
+        [this](){
+            uint8_t templ = this->state.l;
+            uint8_t temph = this->state.h;
+            this->state.l = this->memory->read(this->state.sp);
+            this->state.h = this->memory->read(this->state.sp + 1);
+            this->memory->write(templ, this->state.sp);
+            this->memory->write(temph, this->state.sp + 1);
+            ++this->state.pc;
+            return 18; 
         } 
     } );
     // CPO (0xe4) if PO, CALL adr
