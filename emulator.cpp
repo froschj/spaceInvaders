@@ -920,6 +920,24 @@ void Emulator8080::buildMap() {
             return 10;
         } 
     } );
+    // CP (0xf4) if P, CALL adr
+    // 17 cycles if call; otherwise 11, 3 bytes
+    // no flags
+    opcodes.insert( { 0xf4, 
+        [this](){
+            // read destination address do call actions
+            if (!(this->state.isFlag(State8080::S))) {
+                this->callAddress(
+                    this->readAddressFromMemory(this->state.pc + 1)
+                );
+                return 17; 
+            } else {
+                this->state.pc += 3;
+                return 11;
+            }
+            
+        } 
+    } );
     // PUSH PSW (0xf5) (sp-2)<-flags; (sp-1)<-A; sp <- sp - 2
     // 11 cycles, 1 byte
     // no flags
