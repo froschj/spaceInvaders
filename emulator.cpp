@@ -591,6 +591,24 @@ void Emulator8080::buildMap() {
             return 10;
         } 
     } );
+    // CZ (0xcc) if if Z, CALL adr
+    // 17 cycles if call; otherwise 11, 3 bytes
+    // no flags
+    opcodes.insert( { 0xcc, 
+        [this](){
+            // read destination address do call actions
+            if (this->state.isFlag(State8080::Z)) {
+                this->callAddress(
+                    this->readAddressFromMemory(this->state.pc + 1)
+                );
+                return 17; 
+            } else {
+                this->state.pc += 3;
+                return 11;
+            }
+            
+        } 
+    } );
     // CALL (0xcd) (SP-1)<-PC.hi;(SP-2)<-PC.lo;SP<-SP-2;PC=adr: 
     // 17 cycles, 3 bytes
     // no flags
