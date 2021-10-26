@@ -15,13 +15,33 @@ Emulator8080::Emulator8080() {
     this->memory = nullptr;
     this->reset(0x0000);
     this->buildMap();
+    this->enableInterrupts = false;
+    this->outputCallback = nullptr;
+    this->inputCallback = nullptr;
 }
 
 // Build an emulator with attached memory device
 Emulator8080::Emulator8080(Memory *memoryDevice) {
-    this->memory = memoryDevice;
+    this->connectMemory(memoryDevice);
     this->reset(0x0000);
     this->buildMap();
+    this->enableInterrupts = false;
+    this->outputCallback = nullptr;
+    this->inputCallback = nullptr;
+}
+
+// connect a callback for the OUT instruction
+// first argument is port address, second argument is value
+void Emulator8080::connectOutput(
+    std::function<void(uint8_t,uint8_t)> outputFunction
+) {
+    this->outputCallback = outputFunction;
+}
+
+// connect a callback for the IN instruction
+// function returns value, argument is port address
+void Emulator8080::connectInput(std::function<uint8_t(uint8_t)> inputFunction) {
+    this->inputCallback = inputFunction;
 }
 
 // empty destructor
@@ -535,7 +555,11 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.insert( { 0xd3, 
         [this](){
-            // ** TO DO **
+            // call callback with port, value
+            outputCallback(
+                this->memory->read(this->state.pc + 1), 
+                this->state.a
+            );
             this->state.pc += 2;
             return 10; 
         } 

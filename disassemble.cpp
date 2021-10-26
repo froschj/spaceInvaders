@@ -88,6 +88,8 @@ int main(int argc, char *argv[]) {
     }
     romFile.close();
 
+    
+
     // move buffer into Memory object
     Memory rom(std::move(tempROM));
 
@@ -137,10 +139,56 @@ int main(int argc, char *argv[]) {
         Emulator8080 emulator(&rom);
         if (args->commandName == "debug") disassembler.reset(startAddress);
         emulator.reset(startAddress);
+
+        // set up memory for cpu emulation
+        // and emulate BDOS calls
+        if (args->isCpmMode) {
+            rom.write(0xc3, 0x0005); //JMP $e400
+            rom.write(0x00, 0x0006);
+            rom.write(0xe4, 0x0007);
+
+            rom.write(0xf5, 0xe400); //PUSH PSW
+            rom.write(0x79, 0xe401); //MOV A,C
+            rom.write(0xd3, 0xe402); //OUT $ff
+            rom.write(0xff, 0xe403);
+            rom.write(0xf1, 0xe404); //POP PSW
+            rom.write(0xc9, 0xe405); //RET
+
+            auto outputPort = [&emulator, &rom](uint8_t port, uint8_t value){
+                if (port == 0xff) {
+                    if (value == 9) {
+                        // C_WRITESTR system call
+                        auto cpuRegisters = emulator.getState();
+                        uint16_t stringOffset = (cpuRegisters->d << 8) 
+                            + cpuRegisters->e;
+                        stringOffset += 3; // skip prefix
+                        std::cout << std::endl; // prefix is a newline
+                        while (
+                            static_cast<char>(rom.read(stringOffset)) != '$'
+                        ) {
+                            std::cout << static_cast<char>(
+                                rom.read(stringOffset)
+                            );
+                            ++stringOffset;
+                        }
+                    } else if (value == 2) {
+                        // C_WRITE system call
+                        auto cpuRegisters = emulator.getState();
+                        std::cout << static_cast<char>(cpuRegisters->e);
+                    }
+                }
+            };
+
+            emulator.connectOutput(outputPort);
+        }
+
         try {
             unsigned long long cycles = 0;
             std::unique_ptr<struct State8080> state = nullptr;
-            while (emulator.getState()->pc < romLength) {
+            while (
+                (emulator.getState()->pc < romLength) 
+                || ((emulator.getState()->pc == 0x0000) && args->isCpmMode)
+            ) {
                 cycles += emulator.step();
                 if (args->commandName == "debug") {
                     disassembler.step();
@@ -181,6 +229,7 @@ int main(int argc, char *argv[]) {
 
     //std::cout << "Filename: " << args->romFileName << std::endl;
     //std::cout << "Binary Mode? " << args->isHexDumpMode << std::endl;
+    std::cout << std::endl;
     return 0;
 }
 

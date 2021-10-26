@@ -93,6 +93,15 @@ class Emulator8080 :
         int step() override; // "execute" an instruction
         void reset(uint16_t address = 0x0000); // put the pc at an address
         inline bool isInterruptEnable() { return enableInterrupts; }
+        // connectMemory(Memory*) provided by paretnt class
+
+        // connect a callback for the OUT instruction
+        // first argument is port address, second argument is value
+        void connectOutput(std::function<void(uint8_t,uint8_t)> outputFunction);
+
+        // connect a callback for the IN instruction
+        // function returns value, argument in port address
+        void connectInput(std::function<uint8_t(uint8_t)> inputFunction);
     private:
         // fetch instruction at address
         uint8_t fetch(uint16_t address);
@@ -104,6 +113,14 @@ class Emulator8080 :
         std::map<uint8_t, std::function<int(void)>> opcodes; 
 
         void buildMap(); // populate the lookup table
+
+        // hold the callback for OUT instruction
+        // arguments are port, value
+        std::function<void(uint8_t,uint8_t)> outputCallback;
+
+        // hold the callback for IN instruction
+        // argument is port, return value is value
+        std::function<uint8_t(uint8_t)> inputCallback;
 
         // read 2 bytes from memory and convert to address
         uint16_t readAddressFromMemory(uint16_t atAddress);
