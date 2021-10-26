@@ -177,6 +177,7 @@ int main(int argc, char *argv[]) {
                         std::cout << static_cast<char>(cpuRegisters->e);
                     }
                 }
+                return;
             };
 
             emulator.connectOutput(outputPort);
@@ -187,7 +188,7 @@ int main(int argc, char *argv[]) {
             std::unique_ptr<struct State8080> state = nullptr;
             while (
                 (emulator.getState()->pc < romLength) 
-                || ((emulator.getState()->pc == 0x0000) && args->isCpmMode)
+                || ((emulator.getState()->pc != 0x0000) && args->isCpmMode)
             ) {
                 cycles += emulator.step();
                 if (args->commandName == "debug") {

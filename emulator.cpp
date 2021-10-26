@@ -361,6 +361,16 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // MOV E,A (0x5f) E <- A
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x5f, 
+        [this](){
+            this->state.e = this->state.a;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // MOV H,M (0x66) H <- (HL):
     // 7 cycles, 1 byte
     // no flags
@@ -391,6 +401,16 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // MOV A,C (0x79) A <- C:
+    // 5 cycles, 1 byte
+    //no flags
+    opcodes.insert( { 0x79, 
+        [this](){
+            this->state.a = this->state.c;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // MOV A,D (0x7a) A <- D:
     // 5 cycles, 1 byte
     // no flags
@@ -417,6 +437,16 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0x7c, 
         [this](){
             this->state.a = this->state.h;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV A,L (0x7d) A <- L
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x7d, 
+        [this](){
+            this->state.a = this->state.l;
             ++this->state.pc;
             return 5; 
         } 
@@ -552,6 +582,21 @@ void Emulator8080::buildMap() {
             return 17; 
         } 
     } );
+    // XTHL (0xe3) L <-> (SP); H <-> (SP+1)
+    // 18 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xe3, 
+        [this](){
+            uint8_t templ = this->state.l;
+            uint8_t temph = this->state.h;
+            this->state.l = this->memory->read(this->state.sp);
+            this->state.h = this->memory->read(this->state.sp + 1);
+            this->memory->write(templ, this->state.sp);
+            this->memory->write(temph, this->state.sp + 1);
+            ++this->state.pc;
+            return 18; 
+        } 
+    } );
     // POP D (0xd1) E <- (sp); D <- (sp+1); sp <- sp+2:
     // 10 cycles, 1 byte
     // no flags
@@ -645,6 +690,21 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // JPE (0xea) if PE, PC <- adr
+    // 10 cycles, 3 bytes
+    // no flags 
+    opcodes.insert( { 0xea, 
+        [this](){
+            if (!(this->state.isFlag(State8080::P))) {
+                uint16_t jumpAddress = 
+                    this->readAddressFromMemory(this->state.pc + 1);
+                this->state.pc = jumpAddress; 
+            } else {
+                this->state.pc += 3;
+            }
+            return 10;
+        } 
+    } );
     // XCHG (0xeb) H <-> D; L <-> E:
     // 4 cycles, 1 byte
     // no flags
@@ -685,6 +745,21 @@ void Emulator8080::buildMap() {
             this->memory->write(this->state.getFlags(), --this->state.sp);
             ++this->state.pc;
             return 11; 
+        } 
+    } );
+    // JM (0xfa) if M, PC <- adr
+    // 10 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0xfa, 
+        [this](){
+            if (this->state.isFlag(State8080::S)) {
+                uint16_t jumpAddress = 
+                    this->readAddressFromMemory(this->state.pc + 1);
+                this->state.pc = jumpAddress; 
+            } else {
+                this->state.pc += 3;
+            }
+            return 10;
         } 
     } );
     // EI (0xfb) special
