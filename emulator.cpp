@@ -583,6 +583,19 @@ void Emulator8080::buildMap() {
             return 17; 
         } 
     } );
+    // ACI A <- A + data + CY:
+    // 7 cycles, 2 bytes
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xce, 
+        [this](){
+            this->state.a = 
+                this->addWithCarryAccumulator(
+                    this->memory->read(this->state.pc + 1)
+                );
+            this->state.pc += 2;
+            return 7; 
+        } 
+    } );
     // XTHL (0xe3) L <-> (SP); H <-> (SP+1)
     // 18 cycles, 1 byte
     // no flags
@@ -1031,6 +1044,40 @@ uint8_t Emulator8080::addWithAccumulator(uint8_t addend) {
 
     return sum;
 }
+
+uint8_t Emulator8080::addWithCarryAccumulator(uint8_t addend) {
+    // do addition upcast to capture carry bit
+    uint16_t result = this->state.a + addend;
+    if (this->state.isFlag(State8080::CY)) ++result;
+
+    uint8_t sum = result & 0x00ff; // extract 1-byte sum
+
+    // update flags
+    this->updateZeroFlag(sum);
+    this->updateSignFlag(sum);
+    this->updateParityFlag(sum);
+
+    // check AC flag since this is an add
+    // sum the low nibbles and see if this makes a carry into the high nibble
+    uint8_t nibbleSum = (this->state.a & 0x0f) + (addend & 0x0f);
+    if (this->state.isFlag(State8080::CY)) ++nibbleSum;
+    if (0x10 & nibbleSum) { // low nibble sum
+        this->state.setFlag(State8080::AC);
+    } else {
+        this->state.unSetFlag(State8080::AC);
+    }
+
+    // determine state of carry flag
+    // do this last since other operations rely on the state of this flag
+    if (result & 0x0100) { //0b0000'0001'0000'0000 mask
+        this->state.setFlag(State8080::CY);
+    } else {
+        this->state.unSetFlag(State8080::CY);
+    }
+
+    return sum;
+}
+
 
 // return the bitwise xor of a value and the accumulator (a register)
 // set Z S P CY AC flags

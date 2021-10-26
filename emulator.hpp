@@ -139,6 +139,7 @@ class Emulator8080 :
         uint8_t decrementValue(uint8_t value);
         uint8_t subtractValues(uint8_t minuend, uint8_t subtrahend);
         uint8_t addWithAccumulator(uint8_t addend);
+        uint8_t addWithCarryAccumulator(uint8_t addend);
         void doubleAddWithHLIntoHL(uint16_t addend);
         uint8_t andWithAccumulator(uint8_t value);
         uint8_t xorWithAccumulator(uint8_t value);
