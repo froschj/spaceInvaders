@@ -681,6 +681,21 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // JPO (0xe2) if PO, PC <- adr:
+    // 10 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0xe2, 
+        [this](){
+            if (!(this->state.isFlag(State8080::P))) {
+                uint16_t jumpAddress = 
+                    this->readAddressFromMemory(this->state.pc + 1);
+                this->state.pc = jumpAddress; 
+            } else {
+                this->state.pc += 3;
+            }
+            return 10;
+        } 
+    } );
     // PUSH H (0xe5) (sp-2)<-L; (sp-1)<-H; sp <- sp - 2:
     // 11 cycles, 1 byte
     // no flags
