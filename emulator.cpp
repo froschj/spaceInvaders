@@ -589,8 +589,8 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0xce, 
         [this](){
             this->state.a = 
-                this->addWithCarryAccumulator(
-                    this->memory->read(this->state.pc + 1)
+                this->addWithAccumulator(
+                    this->memory->read(this->state.pc + 1), true
                 );
             this->state.pc += 2;
             return 7; 
@@ -694,6 +694,38 @@ void Emulator8080::buildMap() {
             return 10;
         } 
     } );
+    // CC if CY, CALL adr
+    // 17 cycles on CALL; 11 otherwise, 3 bytes
+    // no flags
+    opcodes.insert( { 0xdc, 
+        [this](){
+            // read destination address do call actions
+            if (this->state.isFlag(State8080::CY)) {
+                this->callAddress(
+                    this->readAddressFromMemory(this->state.pc + 1)
+                );
+                return 17; 
+            } else {
+                this->state.pc += 3;
+                return 11;
+            }
+            
+        } 
+    } );
+    // SBI (0xde) A <- A - data - CY
+    // 7 cycles, 2 bytes
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xde, 
+        [this](){
+            this->state.a = this->subtractValues(
+                this->state.a, // minuend
+                this->memory->read(this->state.pc + 1), //subtrahend
+                true //include carry bit
+            );
+            this->state.pc += 2;
+            return 7; 
+        } 
+    } );
     // POP H (0xe1) L <- (sp); H <- (sp+1); sp <- sp+2
     // 10 cycles, 1 byte
     // no flags
@@ -779,6 +811,18 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // XRI A <- A ^ data:
+    // 7 cycles, 2 bytes
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xee, 
+        [this](){
+            this->state.a = 
+                this->xorWithAccumulator(this->memory->read(this->state.pc +1));
+
+            this->state.pc += 2;
+            return 7; 
+        } 
+    } );
     // POP PSW (0xf1) flags <- (sp); A <- (sp+1); sp <- sp+2
     // 10 cycles, 1 byte
     // no flags
@@ -817,6 +861,18 @@ void Emulator8080::buildMap() {
             this->memory->write(this->state.getFlags(), --this->state.sp);
             ++this->state.pc;
             return 11; 
+        } 
+    } );
+    // ORI (0xf6) A <- A | data
+    // 7 cycles, 2 bytes
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xf6, 
+        [this](){
+            this->state.a = 
+                this->orWithAccumulator(this->memory->read(this->state.pc +1));
+
+            this->state.pc += 2;
+            return 7; 
         } 
     } );
     // JM (0xfa) if M, PC <- adr
@@ -959,15 +1015,21 @@ uint8_t Emulator8080::decrementValue(uint8_t value) {
 
 // subtract subtrahend from minuend, set Z, S, P, CY, AC flags
 // return minuend - subtrahend
-uint8_t Emulator8080::subtractValues(uint8_t minuend, uint8_t subtrahend) {
+uint8_t Emulator8080::subtractValues(
+    uint8_t minuend, uint8_t subtrahend, bool withCarry
+) {
+    // set up carry bit
+    uint8_t carryBit = 0;
+    if (withCarry && this->state.isFlag(State8080::CY)) carryBit = 1;
+
     //check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
-    if (((minuend & 0x0f) - (subtrahend & 0x0f)) & 0xf0) {
+    if (((minuend & 0x0f) - (subtrahend & 0x0f) - carryBit) & 0xf0) {
         this->state.setFlag(State8080::AC);
     } else {
         this->state.unSetFlag(State8080::AC);
     }
     // do the subtraction upcast to uint16_t in order to capture carry bit
-    uint16_t result = minuend - subtrahend;
+    uint16_t result = minuend - subtrahend - carryBit;
     // get the 1-byte difference
     uint8_t difference = result & 0x00ff;
     // set flags based on result of operation
@@ -987,6 +1049,7 @@ uint8_t Emulator8080::subtractValues(uint8_t minuend, uint8_t subtrahend) {
 
     return difference;
 }
+
 
 // add a 2-byte addend to HL and store the result in HL
 // set the CY flag if necessary
@@ -1027,41 +1090,14 @@ uint8_t Emulator8080::andWithAccumulator(uint8_t value) {
     return result;
 }
 
+
 // return the sum an addend and the accumulator (a register)
+// additionally adding the carry bit
 // set Z S P CY AC flags
-uint8_t Emulator8080::addWithAccumulator(uint8_t addend) {
+uint8_t Emulator8080::addWithAccumulator(uint8_t addend, bool withCarry) {
     // do addition upcast to capture carry bit
     uint16_t result = this->state.a + addend;
-
-    uint8_t sum = result & 0x00ff; // extract 1-byte sum
-
-    // update flags
-    this->updateZeroFlag(sum);
-    this->updateSignFlag(sum);
-    this->updateParityFlag(sum);
-
-    // check AC flag since this is an add
-    // sum the low nibbles and see if this makes a carry into the high nibble
-    if (0x10 & ((this->state.a & 0x0f) + (addend & 0x0f))) { // low nibble sum
-        this->state.setFlag(State8080::AC);
-    } else {
-        this->state.unSetFlag(State8080::AC);
-    }
-
-    // determine state of carry flag
-    if (result & 0x0100) { //0b0000'0001'0000'0000 mask
-        this->state.setFlag(State8080::CY);
-    } else {
-        this->state.unSetFlag(State8080::CY);
-    }
-
-    return sum;
-}
-
-uint8_t Emulator8080::addWithCarryAccumulator(uint8_t addend) {
-    // do addition upcast to capture carry bit
-    uint16_t result = this->state.a + addend;
-    if (this->state.isFlag(State8080::CY)) ++result;
+    if (this->state.isFlag(State8080::CY) && withCarry) ++result;
 
     uint8_t sum = result & 0x00ff; // extract 1-byte sum
 
@@ -1073,7 +1109,7 @@ uint8_t Emulator8080::addWithCarryAccumulator(uint8_t addend) {
     // check AC flag since this is an add
     // sum the low nibbles and see if this makes a carry into the high nibble
     uint8_t nibbleSum = (this->state.a & 0x0f) + (addend & 0x0f);
-    if (this->state.isFlag(State8080::CY)) ++nibbleSum;
+    if (this->state.isFlag(State8080::CY) && withCarry) ++nibbleSum;
     if (0x10 & nibbleSum) { // low nibble sum
         this->state.setFlag(State8080::AC);
     } else {
@@ -1091,6 +1127,17 @@ uint8_t Emulator8080::addWithCarryAccumulator(uint8_t addend) {
     return sum;
 }
 
+// return the bitwise or of a value and the accumulator (a register)
+// set Z S P CY AC flags
+uint8_t Emulator8080::orWithAccumulator(uint8_t value) {
+    this->state.unSetFlag(State8080::CY);
+    this->state.unSetFlag(State8080::AC);
+    uint8_t result = value | this->state.a;
+    this->updateZeroFlag(value);
+    this->updateSignFlag(value);
+    this->updateParityFlag(value);
+    return result;
+}
 
 // return the bitwise xor of a value and the accumulator (a register)
 // set Z S P CY AC flags
