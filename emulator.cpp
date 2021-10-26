@@ -565,6 +565,21 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // JNC (0xd2) if NCY, PC<-adr
+    // 10 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0xd2, 
+        [this](){
+            if (!(this->state.isFlag(State8080::CY))) {
+                uint16_t jumpAddress = 
+                    this->readAddressFromMemory(this->state.pc + 1);
+                this->state.pc = jumpAddress; 
+            } else {
+                this->state.pc += 3;
+            }
+            return 10;
+        } 
+    } );
     // OUT (0xd3) special
     // 10 cycles, 2 bytes
     // no flags
