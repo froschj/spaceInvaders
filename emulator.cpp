@@ -653,6 +653,21 @@ void Emulator8080::buildMap() {
             return 11; 
         } 
     } );
+    // JC (0xda) if CY, PC<-adr
+    // 10 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0xda, 
+        [this](){
+            if (this->state.isFlag(State8080::CY)) {
+                uint16_t jumpAddress = 
+                    this->readAddressFromMemory(this->state.pc + 1);
+                this->state.pc = jumpAddress; 
+            } else {
+                this->state.pc += 3;
+            }
+            return 10;
+        } 
+    } );
     // POP H (0xe1) L <- (sp); H <- (sp+1); sp <- sp+2
     // 10 cycles, 1 byte
     // no flags
@@ -696,7 +711,7 @@ void Emulator8080::buildMap() {
     // no flags 
     opcodes.insert( { 0xea, 
         [this](){
-            if (!(this->state.isFlag(State8080::P))) {
+            if (this->state.isFlag(State8080::P)) {
                 uint16_t jumpAddress = 
                     this->readAddressFromMemory(this->state.pc + 1);
                 this->state.pc = jumpAddress; 
@@ -733,6 +748,21 @@ void Emulator8080::buildMap() {
 
             ++this->state.pc;
             return 10; 
+        } 
+    } );
+    // JP (0xf2) if P=1 PC <- adr
+    // 10 cycles
+    // no flags
+    opcodes.insert( { 0xf2, 
+        [this](){
+            if (!(this->state.isFlag(State8080::S))) {
+                uint16_t jumpAddress = 
+                    this->readAddressFromMemory(this->state.pc + 1);
+                this->state.pc = jumpAddress; 
+            } else {
+                this->state.pc += 3;
+            }
+            return 10;
         } 
     } );
     // PUSH PSW (0xf5) (sp-2)<-flags; (sp-1)<-A; sp <- sp - 2
