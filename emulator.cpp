@@ -864,6 +864,23 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // CPE (0xec) if PE, CALL adr
+    // 17 cycles if call; otherwise 11, 3 bytes
+    // no flags
+    opcodes.insert( { 0xec, 
+        [this](){
+            // read destination address do call actions
+            if (this->state.isFlag(State8080::P)) {
+                this->callAddress(
+                    this->readAddressFromMemory(this->state.pc + 1)
+                );
+                return 17; 
+            } else {
+                this->state.pc += 3;
+                return 11;
+            }
+        } 
+    } );
     // XRI A <- A ^ data:
     // 7 cycles, 2 bytes
     // Z, S, P, CY, AC
