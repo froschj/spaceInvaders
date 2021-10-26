@@ -461,6 +461,7 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // 
     // ANA A (0xa7) A <- A & A
     // 4 cycles, 1 byte
     // Z, S, P, CY, AC

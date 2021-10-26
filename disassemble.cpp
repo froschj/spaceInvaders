@@ -181,15 +181,15 @@ int main(int argc, char *argv[]) {
             };
 
             emulator.connectOutput(outputPort);
+        } else {
+            emulator.connectOutput([](uint8_t port, uint8_t value){return;});
+            
         }
-
         try {
             unsigned long long cycles = 0;
             std::unique_ptr<struct State8080> state = nullptr;
-            while (
-                (emulator.getState()->pc < romLength) 
-                || ((emulator.getState()->pc != 0x0000) && args->isCpmMode)
-            ) {
+            bool finished = false;
+            while (!finished) {
                 cycles += emulator.step();
                 if (args->commandName == "debug") {
                     disassembler.step();
@@ -219,7 +219,10 @@ int main(int argc, char *argv[]) {
                         << std::bitset<8>(static_cast<int>(state->getFlags()));
                     std::cout << std::endl;
                 }
-            }
+                if (args->isCpmMode && (emulator.getState()->pc == 0)) {
+                    finished = true;
+                } 
+            } 
         } catch (const std::exception& e) {
             // processor throws excptions on illegal memory read
             // and on unknown opcode
