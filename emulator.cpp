@@ -666,6 +666,19 @@ void Emulator8080::buildMap() {
             return 11; 
         } 
     } );
+    // SUI (0xd6) A <- A - data
+    // 7 cycles, 2 bytes
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xd6, 
+        [this](){
+            this->state.a = this->subtractValues(
+                this->state.a, // minuend
+                this->memory->read(this->state.pc + 1) //subtrahend
+            );
+            this->state.pc += 2;
+            return 7; 
+        } 
+    } );
     // JC (0xda) if CY, PC<-adr
     // 10 cycles, 3 bytes
     // no flags
