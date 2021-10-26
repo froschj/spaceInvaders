@@ -528,10 +528,7 @@ void Emulator8080::buildMap() {
         [this](){
             // read destination address do call actions
             if (!(this->state.isFlag(State8080::Z))) {
-                this->callAddress(
-                    this->readAddressFromMemory(this->state.pc + 1)
-                );
-                return 17; 
+                return (this->decode(0xcd))(); // CALL (0xcd) 17 cycles
             } else {
                 this->state.pc += 3;
                 return 11;
@@ -598,10 +595,7 @@ void Emulator8080::buildMap() {
         [this](){
             // read destination address do call actions
             if (this->state.isFlag(State8080::Z)) {
-                this->callAddress(
-                    this->readAddressFromMemory(this->state.pc + 1)
-                );
-                return 17; 
+                return (this->decode(0xcd))(); // CALL (0xcd) 17 cycles
             } else {
                 this->state.pc += 3;
                 return 11;
@@ -681,10 +675,7 @@ void Emulator8080::buildMap() {
         [this](){
             // read destination address do call actions
             if (!(this->state.isFlag(State8080::CY))) {
-                this->callAddress(
-                    this->readAddressFromMemory(this->state.pc + 1)
-                );
-                return 17; 
+                return (this->decode(0xcd))(); // CALL (0xcd) 17 cycles
             } else {
                 this->state.pc += 3;
                 return 11;
@@ -739,10 +730,7 @@ void Emulator8080::buildMap() {
         [this](){
             // read destination address do call actions
             if (this->state.isFlag(State8080::CY)) {
-                this->callAddress(
-                    this->readAddressFromMemory(this->state.pc + 1)
-                );
-                return 17; 
+                return(this->decode(0xcd))(); // CALL (0xcd) 17 cycles 
             } else {
                 this->state.pc += 3;
                 return 11;
@@ -814,10 +802,7 @@ void Emulator8080::buildMap() {
         [this](){
             // read destination address do call actions
             if (!(this->state.isFlag(State8080::P))) {
-                this->callAddress(
-                    this->readAddressFromMemory(this->state.pc + 1)
-                );
-                return 17; 
+                return(this->decode(0xcd))(); // CALL (0xcd) 17 cycles 
             } else {
                 this->state.pc += 3;
                 return 11;
@@ -889,10 +874,7 @@ void Emulator8080::buildMap() {
         [this](){
             // read destination address do call actions
             if (this->state.isFlag(State8080::P)) {
-                this->callAddress(
-                    this->readAddressFromMemory(this->state.pc + 1)
-                );
-                return 17; 
+                return (this->decode(0xcd))(); // CALL (0xcd) 17 cycles 
             } else {
                 this->state.pc += 3;
                 return 11;
@@ -945,10 +927,7 @@ void Emulator8080::buildMap() {
         [this](){
             // read destination address do call actions
             if (!(this->state.isFlag(State8080::S))) {
-                this->callAddress(
-                    this->readAddressFromMemory(this->state.pc + 1)
-                );
-                return 17; 
+                return (this->decode(0xcd))(); // CALL (0xcd) 17 cycles 
             } else {
                 this->state.pc += 3;
                 return 11;
@@ -1013,10 +992,7 @@ void Emulator8080::buildMap() {
         [this](){
             // read destination address do call actions
             if (this->state.isFlag(State8080::S)) {
-                this->callAddress(
-                    this->readAddressFromMemory(this->state.pc + 1)
-                );
-                return 17; 
+                return (this->decode(0xcd))(); // CALL (0xcd) 17 cycles 
             } else {
                 this->state.pc += 3;
                 return 11;
