@@ -372,6 +372,19 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // SHLD (0x22) (adr) <-L; (adr+1)<-H:
+    // 16 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0x22, 
+        [this](){ 
+            uint16_t writeAddress = 
+                this->readAddressFromMemory(this->state.pc + 1);
+            this->memory->write(this->state.l, writeAddress);
+            this->memory->write(this->state.h, ++writeAddress);
+            this->state.pc += 3;
+            return 16; 
+        } 
+    } );
     // INX H (0x23) HL <- HL + 1:
     // 5 cycles, 1 byte
     // no flags
@@ -413,7 +426,7 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0x26, 
         [this](){ 
             this->state.h = this->memory->read(this->state.pc + 1);
-            this->state.pc +=2;
+            this->state.pc += 2;
             return 7; 
         } 
     } );
@@ -423,8 +436,21 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0x29, 
         [this](){ 
             this->doubleAddWithHLIntoHL(this->getHL());
-            this->state.pc +=1;
+            ++this->state.pc;
             return 10; 
+        } 
+    } );
+    // LHLD (0x2a) L <- (adr); H<-(adr+1)
+    // 16 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0x2a, 
+        [this](){ 
+            uint16_t readAddress = 
+                this->readAddressFromMemory(this->state.pc + 1);
+            this->state.l = this->memory->read(readAddress);
+            this->state.h = this->memory->read(++readAddress);
+            this->state.pc += 3;
+            return 16; 
         } 
     } );
     // DCX H (0x2b) HL = HL-1:
