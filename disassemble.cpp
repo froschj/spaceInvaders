@@ -70,14 +70,14 @@ int main(int argc, char *argv[]) {
     romFile.seekg(0, romFile.end);
     int romLength = romFile.tellg();
     romFile.seekg(0, romFile.beg);
-    if (romLength + startAddress > 0xffff) {
+    if (romLength + startAddress > 0x10000) {
         std::cerr << "File too long." << std::endl;
         return 1;
     }
 
     // create a buffer and read into it
     std::unique_ptr<std::vector<uint8_t>> tempROM = 
-        std::make_unique<std::vector<uint8_t>> (0xffff);
+        std::make_unique<std::vector<uint8_t>> (0x10000);
     romFile.read(
         reinterpret_cast<char*>(tempROM->data() + startAddress), 
         romLength

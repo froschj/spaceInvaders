@@ -121,6 +121,17 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // INR B (0x04) B <- B+1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x04, 
+        [this](){
+            // increments and sets flags
+            this->state.b = this->incrementValue(this->state.b);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
     // DCR B (0x05) B <- B-1:
     // 5 cycles, 1 byte
     // Z, S, P, AC
@@ -150,6 +161,17 @@ void Emulator8080::buildMap() {
             this->doubleAddWithHLIntoHL(this->getBC());
             ++this->state.pc;
             return 10;
+        } 
+    } );
+    // INR C (0x0c) C <- C+1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x0c, 
+        [this](){
+            // increments and sets flags
+            this->state.c = this->incrementValue(this->state.c);
+            ++this->state.pc;
+            return 5;
         } 
     } );
     // DCR C (0x0d) C <-C-1:
@@ -216,6 +238,28 @@ void Emulator8080::buildMap() {
             return 5;
         } 
     } );
+    // INR D (0x14) D <- D+1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x14, 
+        [this](){
+            // increments and sets flags
+            this->state.d = this->incrementValue(this->state.d);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
+    // DCR D (0x15) D <- D-1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x15, 
+        [this](){
+            // decrement(uint8_t) decrements and sets flags
+            this->state.d = this->decrementValue(this->state.d);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
     // DAD D (0x19) HL = HL + DE;
     // 10 cycles, 1 byte
     // CY
@@ -234,6 +278,28 @@ void Emulator8080::buildMap() {
             this->state.a = this->memory->read(this->getDE());
             ++this->state.pc;
             return 7; 
+        } 
+    } );
+    // INR E (0x1c) E <- E+1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x1c, 
+        [this](){
+            // increments and sets flags
+            this->state.e = this->incrementValue(this->state.e);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
+    // DCR E (0x1d) D <- D-1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x1d, 
+        [this](){
+            // decrement(uint8_t) decrements and sets flags
+            this->state.e = this->decrementValue(this->state.e);
+            ++this->state.pc;
+            return 5;
         } 
     } );
     // LXI H (0x21) H <- byte 3, L <- byte 2: 
@@ -260,6 +326,28 @@ void Emulator8080::buildMap() {
             return 5;
         } 
     } );
+    // INR H (0x04) H <- H+1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x24, 
+        [this](){
+            // increments and sets flags
+            this->state.h = this->incrementValue(this->state.h);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
+    // DCR H (0x25) H <- H-1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x25, 
+        [this](){
+            // decrement(uint8_t) decrements and sets flags
+            this->state.h = this->decrementValue(this->state.h);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
     // MVI H (0x26) H <- byte 2:
     // 7 cycles, 2 bytes
     // no flags
@@ -278,6 +366,28 @@ void Emulator8080::buildMap() {
             this->doubleAddWithHLIntoHL(this->getHL());
             this->state.pc +=1;
             return 10; 
+        } 
+    } );
+    // INR L (0x2c) L <- L+1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x2c, 
+        [this](){
+            // increments and sets flags
+            this->state.l = this->incrementValue(this->state.l);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
+    // DCR L (0x2d) L <- L-1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x2d, 
+        [this](){
+            // decrement(uint8_t) decrements and sets flags
+            this->state.l = this->decrementValue(this->state.l);
+            ++this->state.pc;
+            return 5;
         } 
     } );
     // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
@@ -337,7 +447,18 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0x3c, 
         [this](){
             // increments and sets flags
-            this->state.a = this->incrementValue(this->state.b);
+            this->state.a = this->incrementValue(this->state.a);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
+    // DCR A (0x3d) A <- A-1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x3d, 
+        [this](){
+            // decrement(uint8_t) decrements and sets flags
+            this->state.a = this->decrementValue(this->state.a);
             ++this->state.pc;
             return 5;
         } 
@@ -352,6 +473,176 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // MOV B,C (0x41) B <- C:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x41, 
+        [this](){
+            this->state.b = this->state.c;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV B,D (0x42) B <- D:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x42, 
+        [this](){
+            this->state.b = this->state.d;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV B,E (0x43) B <- E:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x43, 
+        [this](){
+            this->state.b = this->state.e;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV B,H (0x44) B <- H:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x44, 
+        [this](){
+            this->state.b = this->state.h;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV B,L (0x45) B <- L:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x45, 
+        [this](){
+            this->state.b = this->state.l;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV B,A (0x47) B <- A:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x47, 
+        [this](){
+            this->state.b = this->state.a;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV C,B (0x48) C <- B:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x48, 
+        [this](){
+            this->state.c = this->state.b;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV C,D (0x4a) C <- D:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x4a, 
+        [this](){
+            this->state.c = this->state.d;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV C,E (0x4b) C <- E:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x4b, 
+        [this](){
+            this->state.c = this->state.e;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV C,H (0x4c) C <- H:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x4c, 
+        [this](){
+            this->state.c = this->state.h;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV C,L (0x4d) C <- L:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x4d, 
+        [this](){
+            this->state.c = this->state.l;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV C,A (0x4f) C <- A:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x4f, 
+        [this](){
+            this->state.c = this->state.a;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV D,C (0x50) D <- C:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x50, 
+        [this](){
+            this->state.d = this->state.c;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV D,C (0x51) D <- C:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x51, 
+        [this](){
+            this->state.d = this->state.c;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV D,E (0x53) D <- E:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x53, 
+        [this](){
+            this->state.d = this->state.e;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV D,H (0x54) D <- H:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x54, 
+        [this](){
+            this->state.d = this->state.h;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV D,L (0x55) D <- L:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x55, 
+        [this](){
+            this->state.d = this->state.l;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // MOV D,M (0x56) D <- (HL):
     // 7 cycles, 1 byte
     // no flags
@@ -360,6 +651,66 @@ void Emulator8080::buildMap() {
             this->state.d = this->memory->read(this->getHL());
             ++this->state.pc;
             return 7; 
+        } 
+    } );
+    // MOV D,A (0x57) D <- A:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x57, 
+        [this](){
+            this->state.d = this->state.a;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV E,B (0x58) E <- B:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x58, 
+        [this](){
+            this->state.e = this->state.b;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV E,C (0x59) E <- C:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x59, 
+        [this](){
+            this->state.e = this->state.c;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV E,D (0x5a) E <- D:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x5a, 
+        [this](){
+            this->state.e = this->state.d;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV E,H (0x5c) E <- H:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x5c, 
+        [this](){
+            this->state.e = this->state.h;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV E,L (0x5d) E <- L:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x5d, 
+        [this](){
+            this->state.e = this->state.l;
+            ++this->state.pc;
+            return 5; 
         } 
     } );
     // MOV E,M (0x5e) E <- (HL):
@@ -382,6 +733,56 @@ void Emulator8080::buildMap() {
             return 5; 
         } 
     } );
+    // MOV H,B (0x60) H <- B:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x60, 
+        [this](){
+            this->state.h = this->state.b;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV H,C (0x61) H <- C:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x61, 
+        [this](){
+            this->state.h = this->state.c;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV H,D (0x62) H <- D:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x62, 
+        [this](){
+            this->state.h = this->state.d;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV H,E (0x63) H <- E:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x63, 
+        [this](){
+            this->state.h = this->state.e;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV H,L (0x65) H <- L:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x65, 
+        [this](){
+            this->state.h = this->state.l;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // MOV H,M (0x66) H <- (HL):
     // 7 cycles, 1 byte
     // no flags
@@ -390,6 +791,66 @@ void Emulator8080::buildMap() {
             this->state.h = this->memory->read(this->getHL());
             ++this->state.pc;
             return 7; 
+        } 
+    } );
+    // MOV H,A (0x67) H <- A:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x67, 
+        [this](){
+            this->state.h = this->state.a;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV L,B (0x68) L <- B:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x68, 
+        [this](){
+            this->state.l = this->state.b;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV L,C (0x69) L <- C:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x69, 
+        [this](){
+            this->state.l = this->state.c;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV L,D (0x6a) L <- D:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x6a, 
+        [this](){
+            this->state.l = this->state.d;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV L,E (0x6b) L <- E:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x6b, 
+        [this](){
+            this->state.l = this->state.e;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV L,H (0x6c) L <- H:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x6c, 
+        [this](){
+            this->state.l = this->state.h;
+            ++this->state.pc;
+            return 5; 
         } 
     } );
     // MOV L,A (0x6f) L <- A:
@@ -410,6 +871,16 @@ void Emulator8080::buildMap() {
             this->memory->write(this->state.a, this->getHL());
             ++this->state.pc;
             return 7; 
+        } 
+    } );
+    // MOV A,B (0x78) A <- B:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x78, 
+        [this](){
+            this->state.a = this->state.b;
+            ++this->state.pc;
+            return 5; 
         } 
     } );
     // MOV A,C (0x79) A <- C:
@@ -1244,7 +1715,7 @@ uint8_t Emulator8080::incrementValue(uint8_t value) {
     } else {
         this->state.unSetFlag(State8080::AC);
     }
-    --value; 
+    ++value; 
     // set flags based on result of operation
     this->updateZeroFlag(value);
     this->updateSignFlag(value);
