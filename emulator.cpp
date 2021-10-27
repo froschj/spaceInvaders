@@ -121,6 +121,16 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // STAX B (0x02) (BC) <- A:
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x02, 
+        [this](){ 
+            this->memory->write(this->state.a, this->getBC());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
     // INX B (0x03) BC <- BC+1:
     // 5 cycles, l byte
     // no flags
@@ -259,6 +269,16 @@ void Emulator8080::buildMap() {
             this->state.e = this->memory->read(this->state.pc + 1); 
             this->state.pc += 3;
             return 10; 
+        } 
+    } );
+    // STAX D (0x12) (DE) <- A:
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x12, 
+        [this](){ 
+            this->memory->write(this->state.a, this->getDE());
+            ++this->state.pc;
+            return 7; 
         } 
     } );
     // INX D (0x13) DE <- DE + 1:
