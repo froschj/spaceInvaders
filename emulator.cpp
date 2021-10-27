@@ -613,7 +613,7 @@ void Emulator8080::buildMap() {
             return 17; 
         } 
     } );
-    // ACI A <- A + data + CY:
+    // ACI (0xce) A <- A + data + CY:
     // 7 cycles, 2 bytes
     // Z, S, P, CY, AC
     opcodes.insert( { 0xce, 
@@ -624,6 +624,20 @@ void Emulator8080::buildMap() {
                 );
             this->state.pc += 2;
             return 7; 
+        } 
+    } );
+    // RNC (0xd0) if NCY, RET
+    // 11 cycles if return; otherwise 5, 1 byte
+    // no flags
+    opcodes.insert( { 0xd0, 
+        [this](){
+            if (!(this->state.isFlag(State8080::CY))) {
+                // RET (0xc9) 10 cycles, add 1
+                return (this->decode(0xc9))() + 1;  
+            } else {
+                ++this->state.pc;
+                return 5;
+            }
         } 
     } );
     // POP D (0xd1) E <- (sp); D <- (sp+1); sp <- sp+2:
