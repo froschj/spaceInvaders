@@ -553,6 +553,16 @@ void Emulator8080::buildMap() {
             return 5; 
         } 
     } );
+    // MOV B,M (0x46) B <- (HL):
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x46, 
+        [this](){
+            this->state.b = this->memory->read(this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
     // MOV B,A (0x47) B <- A:
     // 5 cycles, 1 byte
     // no flags
@@ -883,6 +893,16 @@ void Emulator8080::buildMap() {
             return 5; 
         } 
     } );
+    // MOV L,M (0x6e) L <- (HL):
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x6e, 
+        [this](){
+            this->state.l = this->memory->read(this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
     // MOV L,A (0x6f) L <- A:
     // 5 cycles, 1 byte
     // no flags
@@ -936,7 +956,7 @@ void Emulator8080::buildMap() {
     // MOV M,H (0x74) (HL) <- H:
     // 7 cycles, 1 byte
     // no flags
-    opcodes.insert( { 0x70, 
+    opcodes.insert( { 0x74, 
         [this](){
             this->memory->write(this->state.h, this->getHL());
             ++this->state.pc;
@@ -1093,6 +1113,18 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // ADD M (0x86) A <- A + (HL)
+    // 7 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x86, 
+        [this](){
+            this->state.a = this->addWithAccumulator(
+                this->memory->read(this->getHL())
+            );
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
     // ADD A (0x87) A <- A + A
     // 4 cycles, 1 byte
     // Z, S, P, CY, AC
@@ -1161,6 +1193,18 @@ void Emulator8080::buildMap() {
             this->state.a = this->addWithAccumulator(this->state.l, true);
             ++this->state.pc;
             return 4; 
+        } 
+    } );
+    // ADC M (0x8e) A <- A + (HL) + CY
+    // 7 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x8e, 
+        [this](){
+            this->state.a = this->addWithAccumulator(
+                this->memory->read(this->getHL()), true
+            );
+            ++this->state.pc;
+            return 7; 
         } 
     } );
     // ADC A (0x8f) A <- A + B + CY
@@ -1233,6 +1277,16 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // SUB M (0x96) A <- A - (HL)
+    // 7 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x96, 
+        [this](){
+            this->state.a = this->subtractValues(this->state.a, this->memory->read(this->getHL()));
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
     // SUB A (0x97) A <- A - A
     // 4 cycles, 1 byte
     // Z, S, P, CY, AC
@@ -1303,13 +1357,25 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
-    // SBB B (0x9d) A <- A - L - CY
+    // SBB L (0x9d) A <- A - L - CY
     // 4 cycles, 1 byte
     // Z, S, P, CY, AC
     opcodes.insert( { 0x9d, 
         [this](){
             this->state.a = this->subtractValues(
                 this->state.a, this->state.l, true
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SBB M (0x9e) A <- A - (HL) - CY
+    // 7 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x9e, 
+        [this](){
+            this->state.a = this->subtractValues(
+                this->state.a, this->memory->read(this->getHL()), true
             );
             ++this->state.pc;
             return 4; 
@@ -1533,6 +1599,118 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0xb7, 
         [this](){
             this->state.a = this->orWithAccumulator(this->state.a);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // CMP B (0xb8) A - B
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xb8, 
+        [this](){
+            // diregard return value, we only need flags set for CPI
+            this->subtractValues(
+                this->state.a, // minuend
+                this->state.b //subtrahend
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // CMP C (0xb9) A - C
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xb9, 
+        [this](){
+            // diregard return value, we only need flags set for CPI
+            this->subtractValues(
+                this->state.a, // minuend
+                this->state.c //subtrahend
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // CMP D (0xba) A - D
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xba, 
+        [this](){
+            // diregard return value, we only need flags set for CPI
+            this->subtractValues(
+                this->state.a, // minuend
+                this->state.d //subtrahend
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // CMP E (0xbb) A - E
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xbb, 
+        [this](){
+            // diregard return value, we only need flags set for CPI
+            this->subtractValues(
+                this->state.a, // minuend
+                this->state.e //subtrahend
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // CMP H (0xbc) A - H
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xbc, 
+        [this](){
+            // diregard return value, we only need flags set for CPI
+            this->subtractValues(
+                this->state.a, // minuend
+                this->state.h //subtrahend
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // CMP L (0xbd) A - C
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xbd, 
+        [this](){
+            // diregard return value, we only need flags set for CPI
+            this->subtractValues(
+                this->state.a, // minuend
+                this->state.l //subtrahend
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // CMP M (0xbe) A - (HL):
+    // 7 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xbe, 
+        [this](){
+            // diregard return value, we only need flags set for CPI
+            this->subtractValues(
+                this->state.a, // minuend
+                this->memory->read(this->getHL()) //subtrahend
+            );
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
+    // CMP A (0xbf) A - A
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xbf, 
+        [this](){
+            // diregard return value, we only need flags set for CPI
+            this->subtractValues(
+                this->state.a, // minuend
+                this->state.a //subtrahend
+            );
             ++this->state.pc;
             return 4; 
         } 
