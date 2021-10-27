@@ -176,6 +176,16 @@ void Emulator8080::buildMap() {
             return 10;
         } 
     } );
+    // LDAX B (0x0a) A <- (BC): 
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x0a, 
+        [this](){
+            this->state.a = this->memory->read(this->getBC());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
     // DCX B (0x0b) BC = BC-1:
     // 5 cycles, 1 byte
     // no flags
