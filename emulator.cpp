@@ -708,6 +708,20 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // RC (0xd8) if CY, RET
+    // 11 cycles if return; otherwise 5, 1 byte
+    // no flags
+    opcodes.insert( { 0xd8, 
+        [this](){
+            if (this->state.isFlag(State8080::CY)) {
+                // RET (0xc9) 10 cycles, add 1
+                return (this->decode(0xc9))() + 1;  
+            } else {
+                ++this->state.pc;
+                return 5;
+            }
+        } 
+    } );
     // JC (0xda) if CY, PC<-adr
     // 10 cycles, 3 bytes
     // no flags
