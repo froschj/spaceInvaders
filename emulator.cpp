@@ -482,19 +482,18 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
-    // JNZ (0xc2) if NZ, PC <- adr
-    // 10 cycles, 3 bytes
+    // RNZ (0xc0) if NZ, RET
+    // 11 cycles if return; otherwise 5, 1 byte
     // no flags
-    opcodes.insert( { 0xc2, 
+    opcodes.insert( { 0xc0, 
         [this](){
-            if (!this->state.isFlag(State8080::Z)) {
-                uint16_t jumpAddress = 
-                    this->readAddressFromMemory(this->state.pc + 1); 
-                this->state.pc = jumpAddress;
+            if (!(this->state.isFlag(State8080::Z))) {
+                // RET (0xc9) 10 cycles, add 1
+                return (this->decode(0xc9))() + 1;  
             } else {
-                this->state.pc += 3;
+                ++this->state.pc;
+                return 5;
             }
-            return 10; 
         } 
     } );
     // POP B (0xc1) C <- (sp); B <- (sp+1); sp <- sp+2:
@@ -507,6 +506,21 @@ void Emulator8080::buildMap() {
             // pop b
             this->state.b = this->memory->read(this->state.sp++);
             ++this->state.pc; 
+            return 10; 
+        } 
+    } );
+    // JNZ (0xc2) if NZ, PC <- adr
+    // 10 cycles, 3 bytes
+    // no flags
+    opcodes.insert( { 0xc2, 
+        [this](){
+            if (!this->state.isFlag(State8080::Z)) {
+                uint16_t jumpAddress = 
+                    this->readAddressFromMemory(this->state.pc + 1); 
+                this->state.pc = jumpAddress;
+            } else {
+                this->state.pc += 3;
+            }
             return 10; 
         } 
     } );
@@ -560,6 +574,20 @@ void Emulator8080::buildMap() {
                 );
             this->state.pc += 2;
             return 7; 
+        } 
+    } );
+    // RZ (0xc8) if Z, RET
+    // 11 cycles if return; otherwise 5, 1 byte
+    // no flags
+    opcodes.insert( { 0xc8, 
+        [this](){
+            if (this->state.isFlag(State8080::Z)) {
+                // RET (0xc9) 10 cycles, add 1
+                return (this->decode(0xc9))() + 1;  
+            } else {
+                ++this->state.pc;
+                return 5;
+            }
         } 
     } );
     // RET (0xc9) PC.lo <- (sp); PC.hi<-(sp+1); SP <- SP+2
