@@ -331,6 +331,17 @@ void Emulator8080::buildMap() {
             return 13; 
         } 
     } );
+    // INR A (0x3c) A <- A+1:
+    // 5 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x3c, 
+        [this](){
+            // increments and sets flags
+            this->state.a = this->incrementValue(this->state.b);
+            ++this->state.pc;
+            return 5;
+        } 
+    } );
     // MVI A (0x3e) A <- byte 2
     // 7 cycles, 2 bytes
     // no flags
@@ -1211,6 +1222,24 @@ void Emulator8080::updateParityFlag(uint8_t value) {
 uint8_t Emulator8080::decrementValue(uint8_t value) {
     //check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
     if (((value & 0x0f) - 1) > 0x0f) {
+        this->state.setFlag(State8080::AC);
+    } else {
+        this->state.unSetFlag(State8080::AC);
+    }
+    --value; 
+    // set flags based on result of operation
+    this->updateZeroFlag(value);
+    this->updateSignFlag(value);
+    this->updateParityFlag(value);
+
+    this->state.unSetFlag(State8080::AC);
+    return value; // return the decremented value
+}
+
+// decrement a value, set Z S P AC flags
+uint8_t Emulator8080::incrementValue(uint8_t value) {
+    //check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
+    if (((value & 0x0f) + 1) > 0x0f) {
         this->state.setFlag(State8080::AC);
     } else {
         this->state.unSetFlag(State8080::AC);

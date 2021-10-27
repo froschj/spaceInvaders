@@ -136,6 +136,7 @@ class Emulator8080 :
         void updateParityFlag(uint8_t value);
 
         // logical and arithmetic helpers
+        uint8_t incrementValue(uint8_t value);
         uint8_t decrementValue(uint8_t value);
         uint8_t subtractValues(
             uint8_t minuend, uint8_t subtrahend, bool withCarry = false
