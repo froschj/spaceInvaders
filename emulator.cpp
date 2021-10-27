@@ -1002,6 +1002,20 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // RM (0xf8) if M, RET
+    // 11 cycles if return; otherwise 5, 1 byte
+    // no flags
+    opcodes.insert( { 0xf8, 
+        [this](){
+            if (this->state.isFlag(State8080::S)) {
+                // RET (0xc9) 10 cycles, add 1
+                return (this->decode(0xc9))() + 1;  
+            } else {
+                ++this->state.pc;
+                return 5;
+            }
+        } 
+    } );
     // JM (0xfa) if M, PC <- adr
     // 10 cycles, 3 bytes
     // no flags
