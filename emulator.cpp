@@ -752,6 +752,20 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // RPO (0xe0) if PO, RET
+    // 11 cycles if return; otherwise 5, 1 byte
+    // no flags
+    opcodes.insert( { 0xe0, 
+        [this](){
+            if (!(this->state.isFlag(State8080::P))) {
+                // RET (0xc9) 10 cycles, add 1
+                return (this->decode(0xc9))() + 1;  
+            } else {
+                ++this->state.pc;
+                return 5;
+            }
+        } 
+    } );
     // POP H (0xe1) L <- (sp); H <- (sp+1); sp <- sp+2
     // 10 cycles, 1 byte
     // no flags
@@ -835,6 +849,20 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // RPE (0xe8) if PE, RET
+    // 11 cycles if return; otherwise 5, 1 byte
+    // no flags
+    opcodes.insert( { 0xe8, 
+        [this](){
+            if (this->state.isFlag(State8080::P)) {
+                // RET (0xc9) 10 cycles, add 1
+                return (this->decode(0xc9))() + 1;  
+            } else {
+                ++this->state.pc;
+                return 5;
+            }
+        } 
+    } );
     // JPE (0xea) if PE, PC <- adr
     // 10 cycles, 3 bytes
     // no flags 
@@ -891,6 +919,20 @@ void Emulator8080::buildMap() {
 
             this->state.pc += 2;
             return 7; 
+        } 
+    } );
+    // RP (0xf0) if P, RET
+    // 11 cycles if return; otherwise 5, 1 byte
+    // no flags
+    opcodes.insert( { 0xf0, 
+        [this](){
+            if (!(this->state.isFlag(State8080::S))) {
+                // RET (0xc9) 10 cycles, add 1
+                return (this->decode(0xc9))() + 1;  
+            } else {
+                ++this->state.pc;
+                return 5;
+            }
         } 
     } );
     // POP PSW (0xf1) flags <- (sp); A <- (sp+1); sp <- sp+2
