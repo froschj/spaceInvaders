@@ -595,6 +595,16 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // STC (0x37) CY = 1:
+    // 4 cycles, 1 byte
+    // CY
+    opcodes.insert( { 0x37, 
+        [this](){ 
+            this->state.setFlag(State8080::CY);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
     // LDA (0x3a) A <- (adr):
     // 13 cycles, 3 bytes
     // no flags
@@ -637,6 +647,16 @@ void Emulator8080::buildMap() {
             this->state.a = this->memory->read(this->state.pc + 1);
             this->state.pc +=2;
             return 7; 
+        } 
+    } );
+    // CMC (0x3f) CY = !CY:
+    // 4 cycles, 1 byte
+    // CY
+    opcodes.insert( { 0x3f, 
+        [this](){ 
+            this->state.complementFlag(State8080::CY);
+            ++this->state.pc;
+            return 4; 
         } 
     } );
     // MOV B,C (0x41) B <- C:
