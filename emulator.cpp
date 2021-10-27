@@ -893,6 +893,66 @@ void Emulator8080::buildMap() {
             return 5; 
         } 
     } );
+    // MOV M,B (0x70) (HL) <- B:
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x70, 
+        [this](){
+            this->memory->write(this->state.b, this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
+    // MOV M,C (0x71) (HL) <- C:
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x71, 
+        [this](){
+            this->memory->write(this->state.c, this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
+    // MOV M,D (0x72) (HL) <- D:
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x72, 
+        [this](){
+            this->memory->write(this->state.d, this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
+    // MOV M,E (0x73) (HL) <- E:
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x73, 
+        [this](){
+            this->memory->write(this->state.e, this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
+    // MOV M,H (0x74) (HL) <- H:
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x70, 
+        [this](){
+            this->memory->write(this->state.h, this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } ); 
+    // MOV M,L (0x75) (HL) <- L:
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x75, 
+        [this](){
+            this->memory->write(this->state.l, this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } ); 
     // MOV M,A (0x77) (HL) <- A:
     // 7 cycles, 1 byte
     // no flags
@@ -1267,6 +1327,66 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // ANA B (0xa0) A <- A & B
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xa0, 
+        [this](){
+            this->state.a = this->andWithAccumulator(this->state.b);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ANA C (0xa1) A <- A & C
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xa1, 
+        [this](){
+            this->state.a = this->andWithAccumulator(this->state.c);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ANA D (0xa2) A <- A & D
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xa2, 
+        [this](){
+            this->state.a = this->andWithAccumulator(this->state.d);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ANA E (0xa3) A <- A & E
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xa3, 
+        [this](){
+            this->state.a = this->andWithAccumulator(this->state.e);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ANA H (0xa4) A <- A & H
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xa4, 
+        [this](){
+            this->state.a = this->andWithAccumulator(this->state.h);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ANA L (0xa5) A <- A & L
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xa5, 
+        [this](){
+            this->state.a = this->andWithAccumulator(this->state.l);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
     // ANA A (0xa7) A <- A & A
     // 4 cycles, 1 byte
     // Z, S, P, CY, AC
@@ -1277,12 +1397,142 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // XRA B (0xa8) A <- A ^ B
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xa8, 
+        [this](){
+            this->state.a = this->xorWithAccumulator(this->state.b);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // XRA C (0xa9) A <- A ^ C
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xa9, 
+        [this](){
+            this->state.a = this->xorWithAccumulator(this->state.c);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // XRA D (0xaa) A <- A ^ D
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xaa, 
+        [this](){
+            this->state.a = this->xorWithAccumulator(this->state.d);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // XRA E (0xab) A <- A ^ E
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xab, 
+        [this](){
+            this->state.a = this->xorWithAccumulator(this->state.e);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // XRA H (0xac) A <- A ^ H
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xac, 
+        [this](){
+            this->state.a = this->xorWithAccumulator(this->state.h);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // XRA L (0xad) A <- A ^ L
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xad, 
+        [this](){
+            this->state.a = this->xorWithAccumulator(this->state.l);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
     // XRA A (0xaf) A <- A ^ A
     // 4 cycles, 1 byte
     // Z, S, P, CY, AC
     opcodes.insert( { 0xaf, 
         [this](){
             this->state.a = this->xorWithAccumulator(this->state.a);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ORA B (0xb0) A <- A | B
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xb0, 
+        [this](){
+            this->state.a = this->orWithAccumulator(this->state.b);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ORA C (0xb1) A <- A | C
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xb1, 
+        [this](){
+            this->state.a = this->orWithAccumulator(this->state.c);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ORA D (0xb2) A <- A | D
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xb2, 
+        [this](){
+            this->state.a = this->orWithAccumulator(this->state.d);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ORA E (0xb3) A <- A | E
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xb3, 
+        [this](){
+            this->state.a = this->orWithAccumulator(this->state.e);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ORA H (0xb4) A <- A | H
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xb4, 
+        [this](){
+            this->state.a = this->orWithAccumulator(this->state.h);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ORA L (0xb5) A <- A | L
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xb5, 
+        [this](){
+            this->state.a = this->orWithAccumulator(this->state.l);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ORA A (0xb7) A <- A | A
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xb7, 
+        [this](){
+            this->state.a = this->orWithAccumulator(this->state.a);
             ++this->state.pc;
             return 4; 
         } 
@@ -2168,9 +2418,9 @@ uint8_t Emulator8080::orWithAccumulator(uint8_t value) {
     this->state.unSetFlag(State8080::CY);
     this->state.unSetFlag(State8080::AC);
     uint8_t result = value | this->state.a;
-    this->updateZeroFlag(value);
-    this->updateSignFlag(value);
-    this->updateParityFlag(value);
+    this->updateZeroFlag(result);
+    this->updateSignFlag(result);
+    this->updateParityFlag(result);
     return result;
 }
 
@@ -2180,9 +2430,9 @@ uint8_t Emulator8080::xorWithAccumulator(uint8_t value) {
     this->state.unSetFlag(State8080::CY);
     this->state.unSetFlag(State8080::AC);
     uint8_t result = value ^ this->state.a;
-    this->updateZeroFlag(value);
-    this->updateSignFlag(value);
-    this->updateParityFlag(value);
+    this->updateZeroFlag(result);
+    this->updateSignFlag(result);
+    this->updateParityFlag(result);
     return result;
 }
 
