@@ -973,7 +973,300 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
-    // 
+    // ADD B (0x80) A <- A + B
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x80, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.b);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADD C (0x81) A <- A + C
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x81, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.c);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADD D (0x82) A <- A + D
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x82, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.d);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADD E (0x83) A <- A + E
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x83, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.e);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADD H (0x84) A <- A + H
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x84, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.h);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADD L (0x85) A <- A + L
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x85, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.l);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADD A (0x87) A <- A + A
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x87, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.a);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADC B (0x88) A <- A + B + CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x88, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.b, true);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADC C (0x89) A <- A + C + CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x89, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.c, true);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADC D (0x8a) A <- A + D + CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x8a, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.d, true);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADC E (0x8b) A <- A + E + CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x8b, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.e, true);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADC H (0x8c) A <- A + H + CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x8c,
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.h, true);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADC L (0x8d) A <- A + L + CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x8d, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.l, true);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // ADC A (0x8f) A <- A + B + CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x8f, 
+        [this](){
+            this->state.a = this->addWithAccumulator(this->state.a, true);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SUB B (0x90) A <- A - B
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x90, 
+        [this](){
+            this->state.a = this->subtractValues(this->state.a, this->state.b);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SUB C (0x91) A <- A - C
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x91, 
+        [this](){
+            this->state.a = this->subtractValues(this->state.a, this->state.c);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SUB D (0x92) A <- A - D
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x92, 
+        [this](){
+            this->state.a = this->subtractValues(this->state.a, this->state.d);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SUB E (0x93) A <- A - E
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x93, 
+        [this](){
+            this->state.a = this->subtractValues(this->state.a, this->state.e);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SUB H (0x94) A <- A - H
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x94, 
+        [this](){
+            this->state.a = this->subtractValues(this->state.a, this->state.h);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SUB L (0x95) A <- A - L
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x95, 
+        [this](){
+            this->state.a = this->subtractValues(this->state.a, this->state.l);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SUB A (0x97) A <- A - A
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x97, 
+        [this](){
+            this->state.a = this->subtractValues(this->state.a, this->state.a);
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SBB B (0x98) A <- A - B - CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x98, 
+        [this](){
+            this->state.a = this->subtractValues(
+                this->state.a, this->state.b, true
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SBB C (0x99) A <- A - C - CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x99, 
+        [this](){
+            this->state.a = this->subtractValues(
+                this->state.a, this->state.c, true
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SBB D (0x9a) A <- A - D - CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x9a, 
+        [this](){
+            this->state.a = this->subtractValues(
+                this->state.a, this->state.d, true
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SBB E (0x9b) A <- A - E - CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x9b, 
+        [this](){
+            this->state.a = this->subtractValues(
+                this->state.a, this->state.e, true
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SBB H (0x9c) A <- A - H - CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x9c, 
+        [this](){
+            this->state.a = this->subtractValues(
+                this->state.a, this->state.h, true
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SBB B (0x9d) A <- A - L - CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x9d, 
+        [this](){
+            this->state.a = this->subtractValues(
+                this->state.a, this->state.l, true
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
+    // SBB A (0x9f) A <- A - A - CY
+    // 4 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0x9f, 
+        [this](){
+            this->state.a = this->subtractValues(
+                this->state.a, this->state.a, true
+            );
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
     // ANA A (0xa7) A <- A & A
     // 4 cycles, 1 byte
     // Z, S, P, CY, AC
