@@ -260,6 +260,16 @@ void Emulator8080::buildMap() {
             return 5;
         } 
     } );
+    // MVI D (0x06): D <- byte 2:
+    // 7 cycles, 2 bytes
+    // no flags
+    opcodes.insert( { 0x16, 
+        [this](){ 
+            this->state.d = this->memory->read(this->state.pc + 1);
+            this->state.pc +=2;
+            return 7; 
+        } 
+    } );
     // DAD D (0x19) HL = HL + DE;
     // 10 cycles, 1 byte
     // CY
@@ -300,6 +310,16 @@ void Emulator8080::buildMap() {
             this->state.e = this->decrementValue(this->state.e);
             ++this->state.pc;
             return 5;
+        } 
+    } );
+    // MVI E (0x1e): E <- byte 2:
+    // 7 cycles, 2 bytes
+    // no flags
+    opcodes.insert( { 0x1e, 
+        [this](){ 
+            this->state.e = this->memory->read(this->state.pc + 1);
+            this->state.pc +=2;
+            return 7; 
         } 
     } );
     // LXI H (0x21) H <- byte 3, L <- byte 2: 
@@ -388,6 +408,16 @@ void Emulator8080::buildMap() {
             this->state.l = this->decrementValue(this->state.l);
             ++this->state.pc;
             return 5;
+        } 
+    } );
+    // MVI L (0x2e): L <- byte 2:
+    // 7 cycles, 2 bytes
+    // no flags
+    opcodes.insert( { 0x2e, 
+        [this](){ 
+            this->state.l = this->memory->read(this->state.pc + 1);
+            this->state.pc +=2;
+            return 7; 
         } 
     } );
     // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
