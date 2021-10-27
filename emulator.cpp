@@ -1378,7 +1378,7 @@ void Emulator8080::buildMap() {
                 this->state.a, this->memory->read(this->getHL()), true
             );
             ++this->state.pc;
-            return 4; 
+            return 7; 
         } 
     } );
     // SBB A (0x9f) A <- A - A - CY
@@ -1453,6 +1453,18 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // ANA M (0xa6) A <- A & HL
+    // 7 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xa6, 
+        [this](){
+            this->state.a = this->andWithAccumulator(
+                this->memory->read(this->getHL())
+            );
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
     // ANA A (0xa7) A <- A & A
     // 4 cycles, 1 byte
     // Z, S, P, CY, AC
@@ -1523,6 +1535,18 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // XRA M (0xae) A <- A ^ (HL)
+    // 7 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xaf, 
+        [this](){
+            this->state.a = this->xorWithAccumulator(
+                this->memory->read(this->getHL())
+            );
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
     // XRA A (0xaf) A <- A ^ A
     // 4 cycles, 1 byte
     // Z, S, P, CY, AC
@@ -1591,6 +1615,18 @@ void Emulator8080::buildMap() {
             this->state.a = this->orWithAccumulator(this->state.l);
             ++this->state.pc;
             return 4; 
+        } 
+    } );
+    // ORA M (0xb6) A <- A | (HL)
+    // 7 cycles, 1 byte
+    // Z, S, P, CY, AC
+    opcodes.insert( { 0xb6, 
+        [this](){
+            this->state.a = this->orWithAccumulator(
+                this->memory->read(this->getHL())
+            );
+            ++this->state.pc;
+            return 7; 
         } 
     } );
     // ORA A (0xb7) A <- A | A
