@@ -176,6 +176,19 @@ void Emulator8080::buildMap() {
             return 10;
         } 
     } );
+    // DCX B (0x0b) BC = BC-1:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x0b, 
+        [this](){
+            uint16_t temp = this->getBC();
+            --temp;
+            this->state.b = static_cast<uint8_t>((temp & 0xff00) >> 8);
+            this->state.c = static_cast<uint8_t>(temp & 0xff);
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // INR C (0x0c) C <- C+1:
     // 5 cycles, 1 byte
     // Z, S, P, AC
@@ -303,6 +316,19 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // DCX D (0x1b) DE = DE-1:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x1b, 
+        [this](){
+            uint16_t temp = this->getDE();
+            --temp;
+            this->state.d = static_cast<uint8_t>((temp & 0xff00) >> 8);
+            this->state.e = static_cast<uint8_t>(temp & 0xff);
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // INR E (0x1c) E <- E+1:
     // 5 cycles, 1 byte
     // Z, S, P, AC
@@ -399,6 +425,19 @@ void Emulator8080::buildMap() {
             this->doubleAddWithHLIntoHL(this->getHL());
             this->state.pc +=1;
             return 10; 
+        } 
+    } );
+    // DCX H (0x2b) HL = HL-1:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x2b, 
+        [this](){
+            uint16_t temp = this->getHL();
+            --temp;
+            this->state.h = static_cast<uint8_t>((temp & 0xff00) >> 8);
+            this->state.l = static_cast<uint8_t>(temp & 0xff);
+            ++this->state.pc;
+            return 5; 
         } 
     } );
     // INR L (0x2c) L <- L+1:
