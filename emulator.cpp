@@ -121,6 +121,19 @@ void Emulator8080::buildMap() {
             return 10; 
         } 
     } );
+    // INX B (0x03) BC <- BC+1:
+    // 5 cycles, l byte
+    // no flags
+    opcodes.insert( { 0x03, 
+        [this](){
+            uint16_t temp = this->getBC();
+            ++temp;
+            this->state.b = static_cast<uint8_t>((temp & 0xff00) >> 8);
+            this->state.c = static_cast<uint8_t>(temp & 0xff);
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // INR B (0x04) B <- B+1:
     // 5 cycles, 1 byte
     // Z, S, P, AC
@@ -444,6 +457,34 @@ void Emulator8080::buildMap() {
             );
             this->state.pc += 3;
             return 13; 
+        } 
+    } );
+    // INR M (0x34) (HL) <- (HL)+1:
+    // 10 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x34, 
+        [this](){
+            // increments and sets flags
+            this->memory->write(
+                this->incrementValue(this->memory->read(this->getHL())),
+                this->getHL()
+            );
+            ++this->state.pc;
+            return 10;
+        } 
+    } );
+    // DCR M (0x35) (HL) <- (HL)-1:
+    // 10 cycles, 1 byte
+    // Z, S, P, AC
+    opcodes.insert( { 0x35, 
+        [this](){
+            // decrement(uint8_t) decrements and sets flags
+            this->memory->write(
+                this->decrementValue(this->memory->read(this->getHL())),
+                this->getHL()
+            );
+            ++this->state.pc;
+            return 10;
         } 
     } );
     // MVI M (0x36) (HL) <- byte 2:
@@ -1538,7 +1579,7 @@ void Emulator8080::buildMap() {
     // XRA M (0xae) A <- A ^ (HL)
     // 7 cycles, 1 byte
     // Z, S, P, CY, AC
-    opcodes.insert( { 0xaf, 
+    opcodes.insert( { 0xae, 
         [this](){
             this->state.a = this->xorWithAccumulator(
                 this->memory->read(this->getHL())
