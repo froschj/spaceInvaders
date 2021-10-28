@@ -2487,6 +2487,15 @@ void Emulator8080::buildMap() {
             }
         } 
     } );
+    // PCHL (0xe9) PC.hi <- H; PC.lo <- L
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xe9, 
+        [this](){
+            this->state.pc = this->getHL();
+            return 5;
+        } 
+    } );
     // JPE (0xea) if PE, PC <- adr
     // 10 cycles, 3 bytes
     // no flags 
@@ -2638,6 +2647,16 @@ void Emulator8080::buildMap() {
                 ++this->state.pc;
                 return 5;
             }
+        } 
+    } );
+    // SPHL (0xf9) SP=HL
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xf9, 
+        [this](){
+            this->state.sp = this->getHL();
+            ++this->state.pc;
+            return 5;
         } 
     } );
     // JM (0xfa) if M, PC <- adr
