@@ -176,6 +176,30 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // RLC (0x07) A = A << 1; bit 0 = prev bit 7; CY = prev bit 7
+    // 4 cycles, 1 byte
+    // CY
+    opcodes.insert( { 0x07, 
+        [this](){ 
+            //std::cout << std::hex << this->state.a << std::endl;
+            //std::cout << this->state.isFlag(State8080::CY) << std::endl;
+            uint16_t shiftRegister = static_cast<uint16_t>(this->state.a);
+            shiftRegister = shiftRegister << 1;
+            if (shiftRegister & 0x0100) {
+                this->state.setFlag(State8080::CY);
+                ++shiftRegister;
+            } else {
+                this->state.unSetFlag(State8080::CY);
+            }
+            shiftRegister &= 0x00ff;
+            
+            this->state.a = static_cast<uint8_t>(shiftRegister);
+            //std::cout << std::hex <<this->state.a << std::endl;
+            //std::cout << this->state.isFlag(State8080::CY) << std::endl;            
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
     // DAD B (0x09) HL = HL + BC:
     // 10 cycles, 1 byte
     // CY
@@ -241,17 +265,16 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
-    // RRC (0x0f) A = A << 1; bit 0 = prev bit 7; CY = prev bit 7:
+    // RRC (0x0f) A = A >> 1; bit 7 = prev bit 0; CY = prev bit 0:
     // 4 cycles, 1 bytes
     // CY
     opcodes.insert( { 0x0f, 
         [this](){
-            uint16_t temp = this->state.a << 1;
-            this->state.a = static_cast<uint8_t>(temp & 0x00ff);
-            // wrap the carry bit arround
-            this->state.a |= static_cast<uint8_t>((temp >> 8) & 0x0001);
-            // set the carry flag
-            if (temp & 0x0100) {
+            uint8_t carry = this->state.a & 0x01;
+            this->state.a = (this->state.a & 0xfe) >> 1;
+            carry = carry << 7;
+            this->state.a += carry;
+            if (this->state.a & 0x80) {
                 this->state.setFlag(State8080::CY);
             } else {
                 this->state.unSetFlag(State8080::CY);
@@ -316,7 +339,7 @@ void Emulator8080::buildMap() {
             return 5;
         } 
     } );
-    // MVI D (0x06): D <- byte 2:
+    // MVI D (0x16): D <- byte 2:
     // 7 cycles, 2 bytes
     // no flags
     opcodes.insert( { 0x16, 
@@ -324,6 +347,26 @@ void Emulator8080::buildMap() {
             this->state.d = this->memory->read(this->state.pc + 1);
             this->state.pc +=2;
             return 7; 
+        } 
+    } );
+    // RAL (0x17) A = A << 1; bit 0 = prev CY; CY = prev bit 7
+    // 4 cycles, 1 byte
+    // CY
+    opcodes.insert( { 0x17, 
+        [this](){ 
+            uint16_t shiftRegister = static_cast<uint16_t>(this->state.a);
+            shiftRegister = shiftRegister << 1;
+            if (this->state.isFlag(State8080::CY)) ++shiftRegister;
+            if (shiftRegister & 0x0100) {
+                this->state.setFlag(State8080::CY);
+            } else {
+                this->state.unSetFlag(State8080::CY);
+            }
+            shiftRegister &= 0x00ff;
+            
+            this->state.a = static_cast<uint8_t>(shiftRegister);          
+            ++this->state.pc;
+            return 4; 
         } 
     } );
     // DAD D (0x19) HL = HL + DE;
@@ -389,6 +432,23 @@ void Emulator8080::buildMap() {
             this->state.e = this->memory->read(this->state.pc + 1);
             this->state.pc +=2;
             return 7; 
+        } 
+    } );
+    // RAR (0x1f) A = A >> 1; bit 7 = prev bit 7; CY = prev bit 0:
+    // 4 cycles, 1 bytes
+    // CY
+    opcodes.insert( { 0x1f, 
+        [this](){
+            uint8_t carry = this->state.a & 0x01;
+            this->state.a = (this->state.a & 0xfe) >> 1;
+            if (this->state.isFlag(State8080::CY)) this->state.a += 0x80;
+            if (carry) {
+                this->state.setFlag(State8080::CY);
+            } else {
+                this->state.unSetFlag(State8080::CY);
+            }
+            ++this->state.pc;
+            return 4;
         } 
     } );
     // LXI H (0x21) H <- byte 3, L <- byte 2: 
