@@ -460,6 +460,49 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+    // DAA (0x27) special:
+    // 4 cycles, 1 byte
+    // Z, S, P, AC, CY
+    opcodes.insert( { 0x27, 
+        [this](){ 
+            uint8_t lowNibble = this->state.a & 0x0f;
+            // add 6 to the low nibble if it is more than 9
+            // or if the AC flag is set
+            // set the AC flag based on this action
+            if (
+                (lowNibble > 0x09)
+                || this->state.isFlag(State8080::AC)
+            ) {
+                lowNibble += 0x06;
+                if (lowNibble & 0x10) {
+                    this->state.setFlag(State8080::AC);
+                } else {
+                    this->state.unSetFlag(State8080::AC);
+                }
+            }
+            lowNibble &= 0x0f;
+            uint8_t highNibble = (this->state.a & 0xf0) >> 4;
+            if (this->state.isFlag(State8080::AC)) ++highNibble;
+            // add 6 to the high nibble if it is more than 9
+            // or if the CY flag is set
+            // set the CY flag based on the outcome
+            if (
+                (highNibble > 0x09)
+                || this->state.isFlag(State8080::CY)
+            ) {
+                highNibble += 0x06;
+                if (highNibble & 0x10) {
+                    this->state.setFlag(State8080::CY);
+                } else {
+                    this->state.unSetFlag(State8080::CY);
+                }
+            }
+            highNibble = (highNibble & 0x0f) << 4;
+            this->state.a = highNibble + lowNibble;
+            ++this->state.pc;
+            return 4; 
+        } 
+    } );
     // DAD H (0x29) HL = HL + HL
     // 10 cycles, 1 byte
     // CY
@@ -526,6 +569,16 @@ void Emulator8080::buildMap() {
             this->state.l = this->memory->read(this->state.pc + 1);
             this->state.pc +=2;
             return 7; 
+        } 
+    } );
+    // CMA (0x2f) A <- !A:
+    // 4 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x2f, 
+        [this](){ 
+            this->state.a = ~(this->state.a);
+            ++this->state.pc;
+            return 4; 
         } 
     } );
     // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
