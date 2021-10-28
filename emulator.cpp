@@ -2823,7 +2823,15 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
-// RST 7 (0xff) not implemented
+    // RST 7 (0xff) CALL 0x0038
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xfe, 
+        [this](){
+            this->callAddress(0x0038, true);
+            return 11; 
+        } 
+    } );
 }
 
 // read an address stored starting at atAddress
@@ -2834,9 +2842,13 @@ uint16_t Emulator8080::readAddressFromMemory(uint16_t atAddress) {
 }
 
 // set up return address on stack and set jump address
-void Emulator8080::callAddress(uint16_t address) {
+void Emulator8080::callAddress(uint16_t address, bool isReset) {
     // advance pc to next instruction
-    this->state.pc += 3;
+    if (isReset) {
+        ++this->state.pc;
+    } else {
+        this->state.pc += 3;
+    }
     // push high byte of next pc
     --this->state.sp;
     this->memory->write(

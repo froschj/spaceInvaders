@@ -149,7 +149,7 @@ class Emulator8080 :
         uint8_t orWithAccumulator(uint8_t value);
 
         // encapusulate call procedures
-        void callAddress(uint16_t address);
+        void callAddress(uint16_t address, bool isReset = false);
                 
         bool enableInterrupts;
      
