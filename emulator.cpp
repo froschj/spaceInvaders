@@ -488,7 +488,7 @@ void Emulator8080::buildMap() {
             return 5;
         } 
     } );
-    // INR H (0x04) H <- H+1:
+    // INR H (0x24) H <- H+1:
     // 5 cycles, 1 byte
     // Z, S, P, AC
     opcodes.insert( { 0x24, 
@@ -802,6 +802,16 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // MOV B,B (0x40) B <- B:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x40, 
+        [this](){
+            // equivalent to NOP, 1 more cycle
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // MOV B,C (0x41) B <- C:
     // 5 cycles, 1 byte
     // no flags
@@ -882,6 +892,16 @@ void Emulator8080::buildMap() {
             return 5; 
         } 
     } );
+    // MOV C,C (0x49) C <- C:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x49, 
+        [this](){
+            // equivalent to 5-cycle NOP
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // MOV C,D (0x4a) C <- D:
     // 5 cycles, 1 byte
     // no flags
@@ -922,6 +942,16 @@ void Emulator8080::buildMap() {
             return 5; 
         } 
     } );
+    // MOV C,M (0x4e) C <- (HL):
+    // 7 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x4e, 
+        [this](){
+            this->state.c = this->memory->read(this->getHL());
+            ++this->state.pc;
+            return 7; 
+        } 
+    } );
     // MOV C,A (0x4f) C <- A:
     // 5 cycles, 1 byte
     // no flags
@@ -948,6 +978,16 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0x51, 
         [this](){
             this->state.d = this->state.c;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV D,D (0x52) D <- D:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x52, 
+        [this](){
+            // 5 cycle NOP
             ++this->state.pc;
             return 5; 
         } 
@@ -1032,6 +1072,16 @@ void Emulator8080::buildMap() {
             return 5; 
         } 
     } );
+    // MOV E,E (0x5b) E <- E:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x5b, 
+        [this](){
+            // 5 cycle NOP
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // MOV E,H (0x5c) E <- H:
     // 5 cycles, 1 byte
     // no flags
@@ -1108,6 +1158,16 @@ void Emulator8080::buildMap() {
     opcodes.insert( { 0x63, 
         [this](){
             this->state.h = this->state.e;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
+    // MOV H,H (0x64) H <- H:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x64, 
+        [this](){
+            // 5 cycle NOP
             ++this->state.pc;
             return 5; 
         } 
@@ -1192,6 +1252,16 @@ void Emulator8080::buildMap() {
             return 5; 
         } 
     } );
+    // MOV L,L (0x6d) L <- L:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x6d, 
+        [this](){
+            // 5 cycle NOP
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // MOV L,M (0x6e) L <- (HL):
     // 7 cycles, 1 byte
     // no flags
@@ -1272,6 +1342,7 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } ); 
+// HLT (0x76) not implemented
     // MOV M,A (0x77) (HL) <- A:
     // 7 cycles, 1 byte
     // no flags
@@ -1350,6 +1421,16 @@ void Emulator8080::buildMap() {
             this->state.a = this->memory->read(this->getHL());
             ++this->state.pc;
             return 7; 
+        } 
+    } );
+    // MOV A,A (0x7f) A <- A
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x7f, 
+        [this](){
+            // 5 cycle NOP
+            ++this->state.pc;
+            return 5; 
         } 
     } );
     // ADD B (0x80) A <- A + B
@@ -2144,6 +2225,7 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+// RST 0 (0xc7) no implemented
     // RZ (0xc8) if Z, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2222,6 +2304,7 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+// RST 1 (0xcf) no implemented
     // RNC (0xd0) if NCY, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2318,6 +2401,7 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+// RST 2 (0xd7) not implemented
     // RC (0xd8) if CY, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2347,7 +2431,19 @@ void Emulator8080::buildMap() {
             return 10;
         } 
     } );
-    // CC if CY, CALL adr
+    // IN (0xdb) special
+    // 10 cycles, 2 bytes
+    // no flags
+    opcodes.insert( { 0xdb, 
+        [this](){
+            // call callback with port and store return value in a
+            this->state.a = 
+                inputCallback(this->memory->read(this->state.pc + 1));
+            this->state.pc += 2;
+            return 10; 
+        } 
+    } );
+    // CC (0xdc) if CY, CALL adr:
     // 17 cycles on CALL; 11 otherwise, 3 bytes
     // no flags
     opcodes.insert( { 0xdc, 
@@ -2376,6 +2472,7 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+// RST 3 (0xdf) not implemented
     // RPO (0xe0) if PO, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2473,6 +2570,7 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+// RST 4 (0xe7) not implemented
     // RPE (0xe8) if PE, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2542,7 +2640,7 @@ void Emulator8080::buildMap() {
             }
         } 
     } );
-    // XRI A <- A ^ data:
+    // XRI (0xee) A <- A ^ data:
     // 7 cycles, 2 bytes
     // Z, S, P, CY, AC
     opcodes.insert( { 0xee, 
@@ -2554,6 +2652,7 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+// RST 5 (0xef) not implemented
     // RP (0xf0) if P, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2593,6 +2692,16 @@ void Emulator8080::buildMap() {
                 this->state.pc += 3;
             }
             return 10;
+        } 
+    } );
+    // DI (0xf3) special
+    // 4 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xfb, 
+        [this](){
+            this->enableInterrupts = false;
+            this->state.pc += 1;
+            return 4; 
         } 
     } );
     // CP (0xf4) if P, CALL adr
@@ -2635,6 +2744,7 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+// RST 6 (0xf7) not implemented
     // RM (0xf8) if M, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2713,6 +2823,7 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
+// RST 7 (0xff) not implemented
 }
 
 // read an address stored starting at atAddress

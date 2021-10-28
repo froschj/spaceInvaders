@@ -185,6 +185,7 @@ int main(int argc, char *argv[]) {
             emulator.connectOutput([](uint8_t port, uint8_t value){return;});
             
         }
+        emulator.connectInput([](uint8_t port){ return 0xff; });
         try {
             unsigned long long cycles = 0;
             std::unique_ptr<struct State8080> state = nullptr;
