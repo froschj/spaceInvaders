@@ -667,6 +667,16 @@ void Emulator8080::buildMap() {
             return 13; 
         } 
     } );
+    // INX SP (0x33) SP <- SP+1:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x33, 
+        [this](){
+            ++this->state.sp;
+            ++this->state.pc;
+            return 5; 
+        } 
+    } );
     // INR M (0x34) (HL) <- (HL)+1:
     // 10 cycles, 1 byte
     // Z, S, P, AC
@@ -718,6 +728,16 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+    // DAD SP (0x39) HL = HL + SP
+    // 10 cycles, 1 byte
+    // CY
+    opcodes.insert( { 0x39, 
+        [this](){ 
+            this->doubleAddWithHLIntoHL(this->state.sp);
+            ++this->state.pc;
+            return 10; 
+        } 
+    } );
     // LDA (0x3a) A <- (adr):
     // 13 cycles, 3 bytes
     // no flags
@@ -728,6 +748,16 @@ void Emulator8080::buildMap() {
             );
             this->state.pc += 3;
             return 13; 
+        } 
+    } );
+    // DCX SP (0x3b) SP = SP-1:
+    // 5 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0x3b, 
+        [this](){
+            --this->state.sp;
+            ++this->state.pc;
+            return 5; 
         } 
     } );
     // INR A (0x3c) A <- A+1:
