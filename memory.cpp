@@ -3,7 +3,12 @@
  */
 #include "memory.hpp"
 #include <cstdint>
-#include <memory>
+//#include <memory>
+
+//Empty constructor
+Memory::Memory() : words(0), startOffset(0)
+{
+}
 
 // create a new memory object that can hold a certain number of 8-bit words
 Memory::Memory(int words) {
@@ -52,4 +57,9 @@ uint16_t Memory::getLowAddress() {
 // returns the high address of memory
 uint16_t Memory::getHighAddress() {
     return (contents->size() - 1) + startOffset;
+}
+
+void Memory::setMemoryBlock(std::unique_ptr<std::vector<uint8_t>> data)
+{
+	this->contents = std::move(data);
 }

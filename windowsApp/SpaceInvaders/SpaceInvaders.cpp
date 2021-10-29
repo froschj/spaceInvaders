@@ -6,6 +6,10 @@
 #include "SpaceInvaders.h"
 #include "platformAdapter.hpp"
 #include "machine.hpp"
+#include "memory.hpp"
+#include "emulator.hpp"
+#include <vector>
+#include <fstream>
 
 #define MAX_LOADSTRING 100
 
@@ -28,10 +32,18 @@ void OnLeft();
 void OnRight();
 void OnFire();
 void OnCoin();
-void PlaySISound(); //Temp sound function
+void PlayShootSound(); //Temp sound function
+void DrawScreen(HWND hWnd, HDC hdc);
+void LoadROMIntoMemory();
+
 
 Adapter platformAdapter;
 Machine machine;
+Memory memory;
+Emulator8080 emulator;
+uint8_t* g_videoBuffer;
+
+
 //end declares
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -44,9 +56,29 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     // TODO: Place code here.
 
+	//Create gui app video buffer
+	int screenPixelBufferSize = 256 * 224; //57344 total pixels
+	g_videoBuffer = reinterpret_cast<uint8_t*>(std::malloc(screenPixelBufferSize * sizeof(uint8_t)));
+
 	//Connecting machine and platform adapters
-	platformAdapter.setInvoke(&PlaySISound);
+	platformAdapter.setShootFunction(&PlayShootSound);
 	machine.setPlatformAdapter(&platformAdapter);
+
+	LoadROMIntoMemory();
+
+	//Create emulator with assigned memory
+	emulator.connectMemory(&memory);
+	emulator.reset(0x0000);
+
+	emulator.connectInput([](uint8_t port) { return 0xff; });
+	emulator.connectOutput([](uint8_t port, uint8_t value) {return; });
+
+	//Let's run the emulator some?
+	for (int i = 0; i < 50000; ++i)
+	{
+		int cycles = emulator.step();
+	}
+
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -119,7 +151,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    //Space Invaders screen: 256x224 pixels
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-	   CW_USEDEFAULT, 0, 300, 600, nullptr, nullptr, hInstance, nullptr);
+	   CW_USEDEFAULT, 0, 224 * 4, 256 * 4, nullptr, nullptr, hInstance, nullptr);
 
 
    if (!hWnd)
@@ -170,15 +202,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HDC hdc = BeginPaint(hWnd, &ps);
             // TODO: Add any drawing code that uses hdc here...
 
-			//TODO replace with Bltbit to draw bitmaps rather than iterate over pixels
-			//test screen drawing
-			for (int x = 0; x < 300; x++)
-			{
-				for (int y = 0; y < 300; y++)
-				{ 
-					SetPixel(hdc, x, y, RGB(rand() % 255, rand() % 255, rand() % 255));
-				}
-			}
+			DrawScreen(hWnd, hdc);
 
             EndPaint(hWnd, &ps);
         }
@@ -230,9 +254,146 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
     return (INT_PTR)FALSE;
 }
 
+
+
+void OnFire()
+{
+	OutputDebugString(_T("On Fire Down!\n"));
+
+	machine.playSound();
+}
+
+void OnCoin()
+{
+	OutputDebugString(_T("On Coin Down!\n"));
+	platformAdapter.coin();
+}
+
+void OnRight()
+{
+	OutputDebugString(_T("On Right Down!\n"));
+	platformAdapter.p1Right();
+}
+
+void OnLeft()
+{
+	OutputDebugString(_T("On Left Down!\n"));
+	platformAdapter.p1Left();
+
+}
+
+
+void DrawScreen(HWND hWnd, HDC hdc)
+{
+	//Space Invaders screen: 256x224 pixels
+	//TODO just drawing it sideways currently
+	int height = 256;
+	int width = 224;
+	int byteSize = 1; //Each pixel is 8 bits
+	int bitCount = byteSize * 8; // could be 8, 16, 24, 32, 64 bits per color, only 0/1 from game
+	int totalSize = height * width * byteSize;  // 57,344 total pixels
+
+	//Iterate over each byte of of memory and put bits into video buffer
+	//int bufferIndex = 0; //Used for testing drawing raw data (rotated clockwise)
+	
+	int rowWidth = 224;
+	int rowIndex = 255;
+	int columnIndex = 0;
+	for (int i = 0x2400; i < 0x4000; ++i)
+	{
+		
+		uint8_t bitBlock = memory.read(i);
+
+		//bitBlock = 0x65; //Test value 0110 0101, uncomment to verify screen is being drawn		
+		
+		/*
+		//This draws the screen as in memory, which is rotated 90' clockwise
+		g_videoBuffer[bufferIndex] = (bitBlock >> 0) & 0x1 ? 255 : 0;  
+		g_videoBuffer[bufferIndex + 1] = (bitBlock >> 1) & 0x1 ? 255 : 0;  
+		g_videoBuffer[bufferIndex + 2] = (bitBlock >> 2) & 0x1 ? 255 : 0; 
+		g_videoBuffer[bufferIndex + 3] = (bitBlock >> 3) & 0x1 ? 255 : 0; 
+		g_videoBuffer[bufferIndex + 4] = (bitBlock >> 4) & 0x1 ? 255 : 0;
+		g_videoBuffer[bufferIndex + 5] = (bitBlock >> 5) & 0x1 ? 255 : 0;
+		g_videoBuffer[bufferIndex + 6] = (bitBlock >> 6) & 0x1 ? 255 : 0;
+		g_videoBuffer[bufferIndex + 7] = (bitBlock >> 7) & 0x1 ? 255 : 0;
+
+		bufferIndex += 8;
+		*/
+
+		//Rotate pixels counter-clockwise, so draw every column bottom-up
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 0) & 0x1 ? 255 : 0;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 1) & 0x1 ? 255 : 0;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 2) & 0x1 ? 255 : 0;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 3) & 0x1 ? 255 : 0;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 4) & 0x1 ? 255 : 0;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 5) & 0x1 ? 255 : 0;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 6) & 0x1 ? 255 : 0;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 7) & 0x1 ? 255 : 0;
+
+		if (rowIndex < 0)
+		{
+			rowIndex = 255;
+			columnIndex += 1;
+		}
+		
+	}
+
+	BITMAPINFO bi{};
+	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bi.bmiHeader.biWidth = width;
+	bi.bmiHeader.biHeight = -height;
+	bi.bmiHeader.biPlanes = 1;
+	bi.bmiHeader.biBitCount = bitCount;
+	bi.bmiHeader.biCompression = BI_RGB;
+
+
+	//Get current screen size
+	RECT clientRect;
+	GetClientRect(hWnd, &clientRect);
+	int targetWidth = clientRect.right - clientRect.left;
+	int targetHeight = clientRect.bottom - clientRect.top;
+
+	//TODO Find the correct ratio to fit in the screen
+
+	int x = StretchDIBits(hdc, 0, 0, targetWidth, targetHeight, 0, 0, width, height, g_videoBuffer, &bi, DIB_RGB_COLORS, SRCCOPY);
+
+}
+
+void LoadROMIntoMemory()
+{
+	//Create memory block and assign to memory
+	std::unique_ptr<std::vector<uint8_t>> memoryBlock =
+		std::make_unique<std::vector<uint8_t>>(0x4000);
+
+	//Read ROM into the memory
+	//https://www.cplusplus.com/doc/tutorial/files/
+	std::ifstream romFile;
+
+	//Open file for reading, at end of file
+	romFile.open("..\\..\\roms\\invaders\\invaders", std::ios::binary|std::ios::ate);
+	if (romFile.is_open())
+	{
+		// Get file size
+		int romLength = romFile.tellg();
+		// Reset file pointer to beginning
+		romFile.seekg(0, std::ios::beg);
+		// Create a buffer and read into it
+		romFile.read(reinterpret_cast<char*>(memoryBlock->data()), romLength);
+		romFile.close();
+
+		//Assign memory
+		memory.setMemoryBlock(std::move(memoryBlock));
+	}
+	else
+	{
+		std::cerr << "Failed to read ROM file" << std::endl;
+	}
+
+}
+
 //TODO replace with final code
 //Temp sound trigger for playing a sound resource, from MSDN documentation
-void PlaySISound()
+void PlayShootSound()
 {
 
 	HRSRC hResInfo;
@@ -249,7 +410,7 @@ void PlaySISound()
 	if (hRes == NULL)
 		return;
 
-	lpWavInMemory = (LPCWSTR) LockResource(hRes);
+	lpWavInMemory = (LPCWSTR)LockResource(hRes);
 
 	sndPlaySound(lpWavInMemory, SND_MEMORY | SND_SYNC |
 		SND_NODEFAULT);
@@ -259,25 +420,38 @@ void PlaySISound()
 
 }
 
-void OnFire()
+/*
+void DrawScreenExample(HDC hdc)
 {
-	OutputDebugString(_T("On Fire Down!\n"));
 
-	machine.playSound();
+	void* p = VirtualAlloc(NULL, 512 * 512 * 4, MEM_COMMIT, PAGE_READWRITE);
+
+
+	if (p == NULL)
+		return;
+
+	PBYTE bytes = reinterpret_cast<PBYTE>(p);
+	if (bytes == NULL)
+		return;
+
+	for (int i = 0; i < 512 * 512 * 4; ++i)
+	{
+		bytes[i] = rand() % 256;
+	}
+
+
+	BITMAPINFO bi{};
+	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bi.bmiHeader.biWidth = 512;
+	bi.bmiHeader.biHeight = -512;
+	bi.bmiHeader.biPlanes = 1;
+	bi.bmiHeader.biBitCount = 32;
+	bi.bmiHeader.biCompression = BI_RGB;
+	int x = StretchDIBits(hdc, 0, 0, 512, 512, 0, 0, 512, 512, bytes, &bi, DIB_RGB_COLORS, SRCCOPY);
+
+	if (p)
+	{
+		VirtualFree(p, 0, MEM_RELEASE);
+	}
 }
-
-void OnCoin()
-{
-	OutputDebugString(_T("On Coin Down!\n"));
-}
-
-void OnRight()
-{
-	OutputDebugString(_T("On Right Down!\n"));
-}
-
-void OnLeft()
-{
-	OutputDebugString(_T("On Left Down!\n"));
-
-}
+*/
