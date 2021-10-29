@@ -70,6 +70,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	emulator.connectMemory(&memory);
 	emulator.reset(0x0000);
 
+	emulator.connectInput([](uint8_t port) { return 0xff; });
+	emulator.connectOutput([](uint8_t port, uint8_t value) {return; });
+
 	//Let's run the emulator some?
 	for (int i = 0; i < 50000; ++i)
 	{
