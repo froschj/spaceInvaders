@@ -79,7 +79,7 @@ class Processor {
         std::unique_ptr<stateType> getState() const {
             return state.clone();
         } // return a copy of the current state
-        void connectMemory(memoryType *memoryDevice) {
+        virtual void connectMemory(memoryType *memoryDevice) {
             memory = memoryDevice;
         }; // connect the processor to a memory
     protected:

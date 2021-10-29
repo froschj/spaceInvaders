@@ -93,7 +93,16 @@ class Emulator8080 :
         int step() override; // "execute" an instruction
         void reset(uint16_t address = 0x0000); // put the pc at an address
         inline bool isInterruptEnable() { return enableInterrupts; }
-		void setMemory(Memory *memoryDevice);
+        // connectMemory(Memory*) provided by paretnt class
+
+        // connect a callback for the OUT instruction
+        // first argument is port address, second argument is value
+        void connectOutput(std::function<void(uint8_t,uint8_t)> outputFunction);
+
+        // connect a callback for the IN instruction
+        // function returns value, argument in port address
+        void connectInput(std::function<uint8_t(uint8_t)> inputFunction);
+
     private:
         // fetch instruction at address
         uint8_t fetch(uint16_t address);
@@ -105,6 +114,14 @@ class Emulator8080 :
         std::map<uint8_t, std::function<int(void)>> opcodes; 
 
         void buildMap(); // populate the lookup table
+
+        // hold the callback for OUT instruction
+        // arguments are port, value
+        std::function<void(uint8_t,uint8_t)> outputCallback;
+
+        // hold the callback for IN instruction
+        // argument is port, return value is value
+        std::function<uint8_t(uint8_t)> inputCallback;
 
         // read 2 bytes from memory and convert to address
         uint16_t readAddressFromMemory(uint16_t atAddress);
@@ -120,15 +137,20 @@ class Emulator8080 :
         void updateParityFlag(uint8_t value);
 
         // logical and arithmetic helpers
+        uint8_t incrementValue(uint8_t value);
         uint8_t decrementValue(uint8_t value);
-        uint8_t subtractValues(uint8_t minuend, uint8_t subtrahend);
-        uint8_t addWithAccumulator(uint8_t addend);
+        uint8_t subtractValues(
+            uint8_t minuend, uint8_t subtrahend, bool withCarry = false
+        );
+        uint8_t addWithAccumulator(uint8_t addend, bool withCarry = false);
+        //uint8_t addWithCarryAccumulator(uint8_t addend);
         void doubleAddWithHLIntoHL(uint16_t addend);
         uint8_t andWithAccumulator(uint8_t value);
         uint8_t xorWithAccumulator(uint8_t value);
+        uint8_t orWithAccumulator(uint8_t value);
 
-        // encapsulate call procedures
-        void callAddress(uint16_t address);
+        // encapusulate call procedures
+        void callAddress(uint16_t address, bool isReset = false);
                 
         bool enableInterrupts;
      
