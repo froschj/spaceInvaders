@@ -3091,3 +3091,9 @@ uint8_t Emulator8080::xorWithAccumulator(uint8_t value) {
     return result;
 }
 
+//TODO replace with interrupt
+void Emulator8080::testInterrupt()
+{
+	callAddress(16, false);
+		
+}

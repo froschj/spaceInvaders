@@ -12,16 +12,16 @@
 #define IDI_SMALL                       108
 #define IDC_SPACEINVADERS               109
 #define IDR_MAINFRAME                   128
-#define IDR_EXPLOSION                   141
-#define IDR_FASTINVADER1                142
-#define IDR_FASTINVADER2                143
-#define IDR_FASTINVADER3                144
-#define IDR_FASTINVADER4                145
-#define IDR_INVADERKILLED               146
+#define IDR_PLAYER_DIE                  141
+#define IDR_FLEET_MOVE_1                142
+#define IDR_FLEET_MOVE_2                143
+#define IDR_FLEET_MOVE_3                144
+#define IDR_FLEET_MOVE_4                145
+#define IDR_INVADER_DIE                 146
 #define IDR_SHOOT                       147
-#define IDR_UFO_HIGHPITCH               148
-#define IDR_WAVE9                       149
+#define IDR_UFO                         148
 #define IDR_UFO_LOWPITCH                149
+#define IDR_UFO_HIT                     149
 #define IDC_STATIC                      -1
 
 // Next default values for new objects

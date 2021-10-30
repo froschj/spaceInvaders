@@ -77,31 +77,31 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <Media Include="explosion.wav">
+    <Media Include="2.wav">
       <Filter>Resource Files</Filter>
     </Media>
-    <Media Include="fastinvader1.wav">
+    <Media Include="4.wav">
       <Filter>Resource Files</Filter>
     </Media>
-    <Media Include="fastinvader2.wav">
+    <Media Include="5.wav">
       <Filter>Resource Files</Filter>
     </Media>
-    <Media Include="fastinvader3.wav">
+    <Media Include="6.wav">
       <Filter>Resource Files</Filter>
     </Media>
-    <Media Include="fastinvader4.wav">
+    <Media Include="7.wav">
       <Filter>Resource Files</Filter>
     </Media>
-    <Media Include="invaderkilled.wav">
+    <Media Include="3.wav">
       <Filter>Resource Files</Filter>
     </Media>
-    <Media Include="shoot.wav">
+    <Media Include="1.wav">
       <Filter>Resource Files</Filter>
     </Media>
-    <Media Include="ufo_highpitch.wav">
+    <Media Include="0.wav">
       <Filter>Resource Files</Filter>
     </Media>
-    <Media Include="ufo_lowpitch.wav">
+    <Media Include="8.wav">
       <Filter>Resource Files</Filter>
     </Media>
   </ItemGroup>

@@ -139,23 +139,23 @@ END
 // WAVE
 //
 
-IDR_EXPLOSION           WAVE                    "explosion.wav"
+IDR_PLAYER_DIE          WAVE                    "2.wav"
 
-IDR_FASTINVADER1        WAVE                    "fastinvader1.wav"
+IDR_FLEET_MOVE_1        WAVE                    "4.wav"
 
-IDR_FASTINVADER2        WAVE                    "fastinvader2.wav"
+IDR_FLEET_MOVE_2        WAVE                    "5.wav"
 
-IDR_FASTINVADER3        WAVE                    "fastinvader3.wav"
+IDR_FLEET_MOVE_3        WAVE                    "6.wav"
 
-IDR_FASTINVADER4        WAVE                    "fastinvader4.wav"
+IDR_FLEET_MOVE_4        WAVE                    "7.wav"
 
-IDR_INVADERKILLED       WAVE                    "invaderkilled.wav"
+IDR_INVADER_DIE         WAVE                    "3.wav"
 
-IDR_SHOOT               WAVE                    "shoot.wav"
+IDR_SHOOT               WAVE                    "1.wav"
 
-IDR_UFO_HIGHPITCH       WAVE                    "ufo_highpitch.wav"
+IDR_UFO                 WAVE                    "0.wav"
 
-IDR_UFO_LOWPITCH        WAVE                    "ufo_lowpitch.wav"
+IDR_UFO_HIT             WAVE                    "8.wav"
 
 
 /////////////////////////////////////////////////////////////////////////////

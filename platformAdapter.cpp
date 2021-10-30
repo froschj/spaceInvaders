@@ -1,103 +1,202 @@
 #include "platformAdapter.hpp"
-//https://www.dummies.com/programming/c/how-to-use-hex-with-binary-for-c-programming/
 
-/*
-Read 1
-BIT 0   coin(0 when active)
-1   P2 start button
-2   P1 start button
-3 ?
-4   P1 shoot button
-5   P1 joystick left
-6   P1 joystick right
-7 ?
-
-Read 2
-BIT 0, 1 dipswitch number of lives(0:3, 1 : 4, 2 : 5, 3 : 6)
-2   tilt 'button'
-3   dipswitch bonus life at 1 : 1000, 0 : 1500
-4   P2 shoot button
-5   P2 joystick left
-6   P2 joystick right
-7   dipswitch coin info 1 : off, 0 : on
-*/
-
-
-void Adapter::setExplosionSoundFunction(std::function<void()> func)
+bool Adapter::isInputChanged()
 {
-	explosionFunc = func;
+	return _inputChanged;
 }
 
-void Adapter::playSoundExplosion()
+void Adapter::setInputChanged(bool inputChanged)
 {
-	if (explosionFunc)
+	_inputChanged = inputChanged;
+}
+
+void Adapter::setCoin(bool coin)
+{
+	_coin = coin;
+	setInputChanged(true);
+}
+
+bool Adapter::isCoin()
+{
+	return _coin;
+}
+
+void Adapter::setP2StartButtonDown(bool down)
+{
+	_p2StartButtonDown = down;
+	setInputChanged(true);
+}
+
+bool Adapter::isP2StartButtonDown()
+{
+	return _p2StartButtonDown;
+}
+
+void Adapter::setP1StartButtonDown(bool down)
+{
+	_p1StartButtonDown = down;
+	setInputChanged(true);
+}
+
+bool Adapter::isP1StartButtonDown()
+{
+	return _p1StartButtonDown;
+}
+
+void Adapter::setP1ShootButtonDown(bool down)
+{
+	_p1ShootButtonDown = down;
+	setInputChanged(true);
+}
+
+bool Adapter::isP1ShootButtonDown()
+{
+	return _p1ShootButtonDown;
+}
+
+void Adapter::setP1LeftButtonDown(bool down)
+{
+	_p1LeftDown = down;
+	setInputChanged(true);
+}
+
+bool Adapter::isP1LeftButtonDown()
+{
+	return _p1LeftDown;
+}
+
+void Adapter::setP1RightButtonDown(bool down)
+{
+	_p1RightDown = down;
+	setInputChanged(true);
+}
+
+bool Adapter::isP1RightButtonDown()
+{
+	return _p1RightDown;
+}
+
+void Adapter::setP2ShootButtonDown(bool down)
+{
+	_p2ShootButtonDown = down;
+	setInputChanged(true);
+}
+
+bool Adapter::isP2ShootButtonDown()
+{
+	return _p2ShootButtonDown;
+}
+
+void Adapter::setP2LeftButtonDown(bool down)
+{
+	_p2LeftDown = down;
+	setInputChanged(true);
+}
+
+bool Adapter::isP2LeftButtonDown()
+{
+	return _p2LeftDown;
+}
+
+void Adapter::setP2RightButtonDown(bool down)
+{
+	_p2RightDown = down;
+	setInputChanged(true);
+}
+
+bool Adapter::isP2RightButtonDown()
+{
+	return _p2RightDown;
+}
+
+void Adapter::setRefreshScreenFunction(std::function<void()> func)
+{
+	refreshScreenFunc = func;
+}
+
+void Adapter::refreshScreen()
+{
+	if (refreshScreenFunc)
 	{
-		explosionFunc();
+		refreshScreenFunc();
 	}
 }
 
-void Adapter::setFastInvaderFunction1(std::function<void()> func)
+void Adapter::setPlayerDieSoundFunction(std::function<void()> func)
 {
-	fastInvader1Func = func;
+	playerDieFunc = func;
 }
 
-void Adapter::playSoundFastInvader1()
+void Adapter::playSoundPlayerDie()
 {
-	if (fastInvader1Func)
+	if (playerDieFunc)
 	{
-		fastInvader1Func();
+		playerDieFunc();
 	}
 }
 
-void Adapter::setFastInvaderFunction2(std::function<void()> func)
+void Adapter::setFleetMove1Function(std::function<void()> func)
 {
-	fastInvader2Func = func;
+	fleetMove1Func = func;
 }
 
-void Adapter::playSoundFastInvader2()
+void Adapter::playSoundFleetMove1()
 {
-	if (fastInvader2Func)
+	if (fleetMove1Func)
 	{
-		fastInvader2Func();
+		fleetMove1Func();
 	}
 }
 
-void Adapter::setFastInvaderFunction3(std::function<void()> func)
+void Adapter::setFleetMove2Function(std::function<void()> func)
 {
-	fastInvader3Func = func;
+	fleetMove2Func = func;
 }
 
-void Adapter::playSoundFastInvader3()
+void Adapter::playSoundFleetMove2()
 {
-	if (fastInvader3Func)
+	if (fleetMove2Func)
 	{
-		fastInvader3Func();
+		fleetMove2Func();
 	}
 }
 
-void Adapter::setFastInvaderFunction4(std::function<void()> func)
+void Adapter::setFleetMove3Function(std::function<void()> func)
 {
-	fastInvader4Func = func;
+	fleetMove3Func = func;
 }
 
-void Adapter::playSoundFastInvader4()
+void Adapter::playSoundFleetMove3()
 {
-	if (fastInvader4Func)
+	if (fleetMove3Func)
 	{
-		fastInvader4Func();
+		fleetMove3Func();
 	}
 }
 
-void Adapter::setInvaderKilledFunction(std::function<void()> func)
+void Adapter::setFleetMove4Function(std::function<void()> func)
 {
-	invaderKilledFunc = func;
+	fleetMove4Func = func;
 }
 
-void Adapter::playSoundInvaderKilled()
+void Adapter::playSoundFleetMove4()
 {
-	if (invaderKilledFunc)
+	if (fleetMove4Func)
 	{
-		invaderKilledFunc();
+		fleetMove4Func();
+	}
+}
+
+void Adapter::setInvaderDieFunction(std::function<void()> func)
+{
+	invaderDieFunc = func;
+}
+
+void Adapter::playSoundInvaderDie()
+{
+	if (invaderDieFunc)
+	{
+		invaderDieFunc();
 	}
 }
 
@@ -114,95 +213,29 @@ void Adapter::playSoundShoot()
 	}
 }
 
-void Adapter::setUFOHighPitchFunction(std::function<void()> func)
+void Adapter::setUFOFunction(std::function<void()> func)
 {
-	ufoHighPitchFunc = func;
+	ufoFunc = func;
 }
 
-//TODO I believe the ufo needs a start/stop, and to loop on the platform side
-void Adapter::playSoundUFOHighPitch()
+void Adapter::playSoundUFO()
 {
-	if (ufoHighPitchFunc)
+	if (ufoFunc)
 	{
-		ufoHighPitchFunc();
+		ufoFunc();
 	}
 }
 
-//TODO I believe the ufo needs a start/stop, and to loop on the platform side
-void Adapter::setUFOLowPitchFunction(std::function<void()> func)
+void Adapter::setUFOHitFunction(std::function<void()> func)
 {
-	ufoLowPitchFunc = func;
+	ufoHitFunc = func;
 }
 
-void Adapter::playSoundUFOLowPitch()
+void Adapter::playSoundUFOHit()
 {
-	if (ufoLowPitchFunc)
+	if (ufoHitFunc)
 	{
-		ufoLowPitchFunc();
+		ufoHitFunc();
 	}
 }
 
-void Adapter::coin()
-{
-	port1 |= 0x01; //set bit 0
-}
-
-void Adapter::p2StartButton()
-{
-	port1 |= 0x02; //set bit 1
-}
-
-void Adapter::p1StartButton()
-{
-	port1 |= 0x04; //set bit 2
-}
-
-void Adapter::p1ShootButton()
-{
-	port1 |= 0x08; //set bit 4
-}
-
-void Adapter::p1Left()
-{
-	port1 |= 0x20; //set bit 5
-}
-
-void Adapter::p1Right()
-{
-	port1 |= 0x40; //set bit 6
-}
-
-void Adapter::p2ShootButton()
-{
-	port2 |= 0x08; //set bit 4
-}
-
-void Adapter::p2Left()
-{
-	port2 |= 0x20; //set bit 5
-}
-
-void Adapter::p2Right()
-{
-	port2 |= 0x40; //set bit 6
-}
-
-const uint8_t Adapter::getPort1()
-{
-	return port1;
-}
-
-const uint8_t Adapter::getPort2()
-{
-	return port2;
-}
-
-void Adapter::setPort1(uint8_t port1In)
-{
-	port1 = port1In;
-}
-
-void Adapter::setPort2(uint8_t port2In)
-{
-	port2 = port2In;
-}

@@ -104,6 +104,8 @@ class Emulator8080 :
         // function returns value, argument in port address
         void connectInput(std::function<uint8_t(uint8_t)> inputFunction);
 
+		void testInterrupt();
+
     private:
         // fetch instruction at address
         uint8_t fetch(uint16_t address);
