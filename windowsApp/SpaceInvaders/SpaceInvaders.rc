@@ -160,6 +160,14 @@ IDR_UFO_HIT             WAVE                    "8.wav"
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// RCDATA
+//
+
+IDR_RCDATA1             RCDATA                  "N:\\OregonStateUniversity\\CS467 - Capstone Project\\Capstone Project\\git\\cs467-capstone\\roms\\invaders\\invaders"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // String Table
 //
 
