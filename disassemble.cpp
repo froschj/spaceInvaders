@@ -2,6 +2,10 @@
  *  Driver program for running an 8080 Disassembler from the command line
  */
 
+#ifdef _WIN32
+#define TCLAP_NAMESTARTSTRING "~~"
+#define TCLAP_FLAGSTARTSTRING "/"
+#endif
 
 #include "tclap/CmdLine.h"
 #include <string>
@@ -15,12 +19,10 @@
 #include "disassembler.hpp"
 #include <vector>
 #include <string>
+#include <bitset>
 #include "emulator.hpp"
 
-#ifdef WINDOWS
-#define TCLAP_NAMESTARTSTRING "~~"
-#define TCLAP_FLAGSTARTSTRING "/"
-#endif
+
 
 #define DISASSEMBLE_VERSION
 
