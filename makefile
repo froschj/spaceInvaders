@@ -13,5 +13,8 @@ disassembler.o:	disassembler.cpp
 emulator.o:		emulator.cpp
 	g++ -c emulator.cpp -std=c++17 
 
+.PHONY : clean
+clean : 
+	-rm emulate8080 disassemble.o memory.o disassembler.o emulator.o
 
 	
