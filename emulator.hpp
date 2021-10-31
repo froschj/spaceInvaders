@@ -106,6 +106,12 @@ class Emulator8080 :
 
 		void testInterrupt();
 
+        // trigger an interrupt
+        // interrupt number is 0 to 7 inclusive
+        // returns # of cpu clock cycles to handle interrupt
+        int sendInterrupt(uint8_t interruptNumber);
+
+
     private:
         // fetch instruction at address
         uint8_t fetch(uint16_t address);
