@@ -94,7 +94,7 @@ void Machine::step()
 		processInput();
 	}
 
-	if (cycleCount < maxCycles)
+	if (cycleCount < maxCycles / 60.0f)
 	{
 		//Step emulator
 		cycleCount += _emulator->step();

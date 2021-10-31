@@ -518,38 +518,37 @@ void DrawScreen(HWND hWnd, HDC hdc)
 
 }
 
+//Reading bundled ROM file as resource instead of external file
 //https://stackoverflow.com/questions/9240188/how-to-load-a-custom-binary-resource-in-a-vc-static-library-as-part-of-a-dll
 void LoadROMIntoMemory()
 {
-	HRSRC myResource = ::FindResource(NULL, MAKEINTRESOURCE(IDR_RCDATA1), RT_RCDATA);
-	if (!myResource)
-		return;
-	unsigned int myResourceSize = ::SizeofResource(NULL, myResource);
-
-
-	HGLOBAL myResourceData = ::LoadResource(NULL, myResource);
-	if (!myResourceData)
+	HRSRC hRomResource = FindResource(NULL, MAKEINTRESOURCE(IDR_ROM_FILE), RT_RCDATA);
+	if (!hRomResource)
 		return;
 
-	void* pMyBinaryData = ::LockResource(myResourceData);
-	if (!pMyBinaryData)
+	unsigned int romSize = SizeofResource(NULL, hRomResource);
+
+	HGLOBAL hRomData = LoadResource(NULL, hRomResource);
+	if (!hRomData)
 		return;
 
-	char* result = reinterpret_cast<char*>(pMyBinaryData);
+	void* pRomBinaryData = LockResource(hRomData);
+	if (!pRomBinaryData)
+		return;
+
+	char* romArray = reinterpret_cast<char*>(pRomBinaryData);
 
 	//Create memory block and assign to memory
 	std::unique_ptr<std::vector<uint8_t>> memoryBlock =
 		std::make_unique<std::vector<uint8_t>>(0x4000);
 
-	memoryBlock->insert(memoryBlock->begin(), result, result + myResourceSize);
-	
-	//memcpy(memoryBlock->data(), &pMyBinaryData[0], myResourceSize * sizeof(char));
+	memoryBlock->insert(memoryBlock->begin(), romArray, romArray + romSize);
 
 	//Assign memory
 	memory.setMemoryBlock(std::move(memoryBlock));
 
-	UnlockResource(myResourceData);
-	FreeResource(myResourceData);
+	UnlockResource(hRomData);
+	FreeResource(hRomData);
 }
 
 /*
@@ -586,6 +585,7 @@ void LoadROMIntoMemory()
 }
 */
 
+//From MSDN documentation on PlaySound/sndPlaySound
 void PlaySoundResource(int lpResourceName)
 {
 	HRSRC hResInfo;

@@ -23,6 +23,7 @@
 #define IDR_UFO_LOWPITCH                149
 #define IDR_UFO_HIT                     149
 #define IDR_RCDATA1                     152
+#define IDR_ROM_FILE                    152
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
