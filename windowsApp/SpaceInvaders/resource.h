@@ -22,6 +22,8 @@
 #define IDR_UFO                         148
 #define IDR_UFO_LOWPITCH                149
 #define IDR_UFO_HIT                     149
+#define IDR_RCDATA1                     152
+#define IDR_ROM_FILE                    152
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -29,7 +31,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
-#define _APS_NEXT_RESOURCE_VALUE        150
+#define _APS_NEXT_RESOURCE_VALUE        153
 #define _APS_NEXT_COMMAND_VALUE         32771
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           110

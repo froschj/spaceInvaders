@@ -105,4 +105,12 @@
       <Filter>Resource Files</Filter>
     </Media>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\roms\invaders\invaders">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="rcdata1.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>
