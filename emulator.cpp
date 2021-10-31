@@ -2697,7 +2697,7 @@ void Emulator8080::buildMap() {
     // DI (0xf3) special
     // 4 cycles, 1 byte
     // no flags
-    opcodes.insert( { 0xfb, 
+    opcodes.insert( { 0xf3, 
         [this](){
             this->enableInterrupts = false;
             this->state.pc += 1;
