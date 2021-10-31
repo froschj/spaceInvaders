@@ -25,24 +25,31 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 //SpaceInvaders variables and forward declares
+void PlaySoundResource(int lpResourceName);
+void PlaySoundPlayerDie();
+void PlaySoundFleetMove1();
+void PlaySoundFleetMove2();
+void PlaySoundFleetMove3();
+void PlaySoundFleetMove4();
+void PlaySoundInvaderDie();
+void PlaySoundShoot();
+void PlaySoundUFO();
+void PlaySoundUFOHit();
 
-//TODO add all input/output port handling
-//1P left/right/shoot, 2P left/right/shoot, CREDIT, etc
-void OnLeft();
-void OnRight();
-void OnFire();
-void OnCoin();
-void PlayShootSound(); //Temp sound function
 void DrawScreen(HWND hWnd, HDC hdc);
 void LoadROMIntoMemory();
 
+void RefreshScreen();
 
 Adapter platformAdapter;
 Machine machine;
 Memory memory;
 Emulator8080 emulator;
 uint8_t* g_videoBuffer;
+bool g_gameRunning;
+bool g_screenNeedsRefresh;
 
+HWND g_hWndGameWindow;
 
 //end declares
 
@@ -54,14 +61,26 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: Place code here.
+    //** Configure machine and emulator **
 
 	//Create gui app video buffer
 	int screenPixelBufferSize = 256 * 224; //57344 total pixels
 	g_videoBuffer = reinterpret_cast<uint8_t*>(std::malloc(screenPixelBufferSize * sizeof(uint8_t)));
 
-	//Connecting machine and platform adapters
-	platformAdapter.setShootFunction(&PlayShootSound);
+	//Connect machine and platform sound output
+	platformAdapter.setShootFunction(&PlaySoundShoot);
+	platformAdapter.setPlayerDieSoundFunction(&PlaySoundPlayerDie);
+	platformAdapter.setInvaderDieFunction(&PlaySoundInvaderDie);
+	platformAdapter.setUFOFunction(&PlaySoundUFO);
+	platformAdapter.setUFOHitFunction(&PlaySoundUFOHit);
+	platformAdapter.setFleetMove1Function(&PlaySoundFleetMove1);
+	platformAdapter.setFleetMove2Function(&PlaySoundFleetMove2);
+	platformAdapter.setFleetMove3Function(&PlaySoundFleetMove3);
+	platformAdapter.setFleetMove4Function(&PlaySoundFleetMove4);
+	
+	//Screen refresh indicator
+	platformAdapter.setRefreshScreenFunction(RefreshScreen);
+
 	machine.setPlatformAdapter(&platformAdapter);
 
 	LoadROMIntoMemory();
@@ -70,15 +89,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	emulator.connectMemory(&memory);
 	emulator.reset(0x0000);
 
-	emulator.connectInput([](uint8_t port) { return 0xff; });
-	emulator.connectOutput([](uint8_t port, uint8_t value) {return; });
+	//Connect machine to emulator
+	machine.setEmulator(&emulator);
 
-	//Let's run the emulator some?
-	for (int i = 0; i < 50000; ++i)
-	{
-		int cycles = emulator.step();
-	}
-
+	//** End Configure machine and emulator **
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
@@ -96,6 +110,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MSG msg;
 
     // Main message loop:
+	/*
     while (GetMessage(&msg, nullptr, 0, 0))
     {
         if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
@@ -104,6 +119,29 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
             DispatchMessage(&msg);
         }
     }
+	*/
+
+	//Main game loop
+	g_gameRunning = true;
+	while (g_gameRunning)
+	{
+		//Prepare to gather input
+		platformAdapter.setInputChanged(false);
+
+		//Check for input or need to redraw screen
+		while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
+		{
+			if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+
+		//Advance the machine, it will trigger a screen refresh when needed
+		machine.step();
+		
+	}
 
     return (int) msg.wParam;
 }
@@ -153,11 +191,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
 	   CW_USEDEFAULT, 0, 224 * 4, 256 * 4, nullptr, nullptr, hInstance, nullptr);
 
-
+	
    if (!hWnd)
    {
       return FALSE;
    }
+
+   g_hWndGameWindow = hWnd;
 
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
@@ -211,14 +251,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		switch (wParam)
 		{
 			case VK_LEFT:
-				OnLeft();
+				platformAdapter.setP1LeftButtonDown(true);
 			break;
 			case VK_SPACE:
-				OnFire();
-				InvalidateRect(hWnd, 0, 0);
+				platformAdapter.setP1ShootButtonDown(true);
 				break;
 			case VK_RIGHT:
-				OnRight();
+				platformAdapter.setP1RightButtonDown(true);
 				break;
 
 			default:
@@ -226,8 +265,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
     case WM_DESTROY:
+		g_gameRunning = false;
         PostQuitMessage(0);
         break;
+	case WM_QUIT:
+		g_gameRunning = false;
+		PostQuitMessage(0);
+		break;
     default:
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
@@ -255,38 +299,10 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 
-
-void OnFire()
-{
-	OutputDebugString(_T("On Fire Down!\n"));
-
-	machine.playSound();
-}
-
-void OnCoin()
-{
-	OutputDebugString(_T("On Coin Down!\n"));
-	platformAdapter.coin();
-}
-
-void OnRight()
-{
-	OutputDebugString(_T("On Right Down!\n"));
-	platformAdapter.p1Right();
-}
-
-void OnLeft()
-{
-	OutputDebugString(_T("On Left Down!\n"));
-	platformAdapter.p1Left();
-
-}
-
-
 void DrawScreen(HWND hWnd, HDC hdc)
 {
 	//Space Invaders screen: 256x224 pixels
-	//TODO just drawing it sideways currently
+	//Each byte in the g_videoBuffer is a pixel to make it easy to rotate
 	int height = 256;
 	int width = 224;
 	int byteSize = 1; //Each pixel is 8 bits
@@ -321,14 +337,16 @@ void DrawScreen(HWND hWnd, HDC hdc)
 		*/
 
 		//Rotate pixels counter-clockwise, so draw every column bottom-up
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 0) & 0x1 ? 255 : 0;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 1) & 0x1 ? 255 : 0;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 2) & 0x1 ? 255 : 0;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 3) & 0x1 ? 255 : 0;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 4) & 0x1 ? 255 : 0;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 5) & 0x1 ? 255 : 0;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 6) & 0x1 ? 255 : 0;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 7) & 0x1 ? 255 : 0;
+		uint8_t low = 0x00;
+		uint8_t high = 0xFF;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 0) & 0x1 ? high : low;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 1) & 0x1 ? high : low;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 2) & 0x1 ? high : low;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 3) & 0x1 ? high : low;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 4) & 0x1 ? high : low;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 5) & 0x1 ? high : low;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 6) & 0x1 ? high : low;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 7) & 0x1 ? high : low;
 
 		if (rowIndex < 0)
 		{
@@ -353,8 +371,7 @@ void DrawScreen(HWND hWnd, HDC hdc)
 	int targetWidth = clientRect.right - clientRect.left;
 	int targetHeight = clientRect.bottom - clientRect.top;
 
-	//TODO Find the correct ratio to fit in the screen
-
+	//TODO Find the correct ratio to fit in the screen	
 	int x = StretchDIBits(hdc, 0, 0, targetWidth, targetHeight, 0, 0, width, height, g_videoBuffer, &bi, DIB_RGB_COLORS, SRCCOPY);
 
 }
@@ -391,16 +408,13 @@ void LoadROMIntoMemory()
 
 }
 
-//TODO replace with final code
-//Temp sound trigger for playing a sound resource, from MSDN documentation
-void PlayShootSound()
+void PlaySoundResource(int lpResourceName)
 {
-
 	HRSRC hResInfo;
 	HANDLE hRes;
 	LPCWSTR lpWavInMemory;
 
-	hResInfo = FindResource(NULL, MAKEINTRESOURCE(IDR_SHOOT), L"WAVE");
+	hResInfo = FindResource(NULL, MAKEINTRESOURCE(lpResourceName), L"WAVE");
 
 	if (hResInfo == NULL)
 		return;
@@ -417,7 +431,56 @@ void PlayShootSound()
 
 	UnlockResource(hRes);
 	FreeResource(hRes);
+}
 
+void PlaySoundPlayerDie()
+{
+	PlaySoundResource(IDR_PLAYER_DIE);
+}
+
+void PlaySoundFleetMove1()
+{
+	PlaySoundResource(IDR_FLEET_MOVE_1);
+}
+
+void PlaySoundFleetMove2()
+{
+	PlaySoundResource(IDR_FLEET_MOVE_2);
+}
+
+void PlaySoundFleetMove3()
+{
+	PlaySoundResource(IDR_FLEET_MOVE_3);
+}
+
+void PlaySoundFleetMove4()
+{
+	PlaySoundResource(IDR_FLEET_MOVE_4);
+}
+
+void PlaySoundInvaderDie()
+{
+	PlaySoundResource(IDR_INVADER_DIE);
+}
+
+void PlaySoundShoot()
+{
+	PlaySoundResource(IDR_SHOOT);
+}
+
+void PlaySoundUFO()
+{
+	PlaySoundResource(IDR_UFO);
+}
+
+void PlaySoundUFOHit()
+{
+	PlaySoundResource(IDR_UFO_HIT);
+}
+
+void RefreshScreen()
+{
+	InvalidateRect(g_hWndGameWindow, 0, 0);
 }
 
 /*
