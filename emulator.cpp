@@ -3155,12 +3155,58 @@ void Emulator8080::testInterrupt()
 }
 
 // trigger an interrupt
-// interrupt number is 0 to 7 inclusive
+// accepts an initializer list of bytes representing an 8080 instruction
+// only one-byte instructions currently implemented
 // returns # of cpu clock cycles to handle interrupt
-int Emulator8080::sendInterrupt(uint8_t interruptNumber) {
+int Emulator8080::processInterrupt(
+    std::initializer_list<uint8_t> instructionBytes
+) {
     if (!(this->enableInterrupts)) return 0;
-    interruptNumber %= 8;
-    uint8_t interruptOpcode = 0xc7 + (interruptNumber * 0x08);
-    auto interruptVector = this->decode(interruptOpcode);
-    return interruptVector();
+    std::vector<uint8_t> interruptBytes = instructionBytes;
+
+    if (interruptBytes.size() == 1) {
+        auto interruptFunction = this->decode(interruptBytes.at(0));
+        return interruptFunction();
+    } else {
+        // handle bad instruction bytes
+        std::stringstream badOpcode;
+        badOpcode << "$" 
+        << std::setw(2) << std::hex << std::setfill('0') 
+        << static_cast<int>(interruptBytes.at(0));
+        throw UnimplementedInterruptError(badOpcode.str());
+    }
+    
+}
+
+// request an interrupt. Accepts a one-byte 8080 opcode
+// returns the number of CPU clock cycles to process the interrupt
+int Emulator8080::requestInterrupt(uint8_t opcode) {
+    if (
+        ((opcode >= 0x3f) && (opcode <= 0xc1))
+        || (((0xf & opcode) == 0x0) && ((opcode == 0x00) || (opcode > 0x3f)))
+        || (((0xf & opcode) == 0x1) && (opcode > 0x3f))
+        || (((0xf & opcode) == 0x2) && (opcode < 0x20))
+        || (((0xf & opcode) == 0x3) && ((opcode < 0xc0) || (opcode > 0xdf)))
+        || (((0xf & opcode) == 0x4) && (opcode < 0xc0))
+        || ((0xf & opcode) == 0x5)
+        // 0x6 covered by 1st case
+        || ((0xf & opcode) == 0x7)
+        || (((0xf & opcode) == 0x8) && (opcode > 0x3f))
+        || (((0xf & opcode) == 0x9) && (opcode != 0xd9))
+        || (((0xf & opcode) == 0xa) && (opcode < 0x20))
+        || (((0xf & opcode) == 0xb) && ((opcode < 0xc0) || (opcode > 0xdf)))
+        || (((0xf & opcode) == 0xc) && (opcode < 0x20))
+        || (((0xf & opcode) == 0xd) && (opcode < 0x20))
+        // 0xe covered by 1st case
+        || ((0xf & opcode) == 0xf)
+    ) {
+        return this->processInterrupt({opcode});
+    } else {
+        // handle bad instruction bytes
+        std::stringstream badOpcode;
+        badOpcode << "$" 
+        << std::setw(2) << std::hex << std::setfill('0') 
+        << static_cast<int>(opcode);
+        throw UnimplementedInterruptError(badOpcode.str());
+    }
 }
