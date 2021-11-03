@@ -94,7 +94,7 @@ void Machine::step()
 		processInput();
 	}
 
-	if (cycleCount < maxCycles)
+	if (cycleCount < maxCycles / 60.0f)
 	{
 		//Step emulator
 		cycleCount += _emulator->step();
@@ -182,14 +182,14 @@ void Machine::setP1ShootButtonBit(bool isSet)
 {
 	if (isSet)
 	{
-		_port1 |= 0x08; //set bit 4
+		_port1 |= 0x10; //set bit 4
 
 		//TODO temp sound callback loop
 		_platformAdapter->playSoundShoot();
 	}
 	else
 	{
-		_port1 &= 0xF7; //unset bit 4
+		_port1 &= 0xEF; //unset bit 4
 	}
 
 	
@@ -227,11 +227,14 @@ void Machine::setP2ShootButtonBit(bool isSet)
 {
 	if (isSet)
 	{
-		_port2 |= 0x08; //set bit 4
+		_port2 |= 0x10; //set bit 4
+
+		//TODO temp sound callback loop
+		_platformAdapter->playSoundShoot();
 	}
 	else
 	{
-		_port2 &= 0xF7; //unset bit 4
+		_port2 &= 0xEF; //unset bit 4
 	}
 
 	
@@ -291,16 +294,16 @@ void Machine::writePortValue(uint8_t port, uint8_t value)
 					//bit 0
 					_platformAdapter->playSoundUFO();
 				}
-				if (value & 0x02 && !(_prev_port3 & 0x02))
+				 if (value & 0x02 && !(_prev_port3 & 0x02))
 				{
 					//bit 1
 					_platformAdapter->playSoundShoot();
 				}
-				if (value & 0x04 && !(_prev_port3 & 0x04))
+				 if (value & 0x04 && !(_prev_port3 & 0x04))
 				{
 					_platformAdapter->playSoundPlayerDie();
 				}
-				if (value & 0x06 && !(_prev_port3 & 0x06))
+				 if ((value & 0x08) && !(_prev_port3 & 0x08))
 				{
 					_platformAdapter->playSoundInvaderDie();
 				}
@@ -347,11 +350,11 @@ void Machine::writePortValue(uint8_t port, uint8_t value)
 				{
 					_platformAdapter->playSoundFleetMove3();
 				}
-				if (value & 0x06 && !(_prev_port5 & 0x06))
+				if (value & 0x08 && !(_prev_port5 & 0x08))
 				{
 					_platformAdapter->playSoundFleetMove4();
 				}
-				if (value & 0x08 && !(_prev_port5 & 0x08))
+				if (value & 0x10 && !(_prev_port5 & 0x10))
 				{
 					_platformAdapter->playSoundUFOHit();
 				}

@@ -259,9 +259,151 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case VK_RIGHT:
 				platformAdapter.setP1RightButtonDown(true);
 				break;
-
+			case 0x58:
+				//x key
+				platformAdapter.setP2LeftButtonDown(true);
+				break;
+			case 0x43:
+				//c key
+				platformAdapter.setP2RightButtonDown(true);
+				break;
+			case 0x5A:
+				//z key
+				platformAdapter.setP2ShootButtonDown(true);
+				break;
+			case 0x31:
+				// 1 key
+				platformAdapter.setP1StartButtonDown(true);
+				break;
+			case 0x32:
+				//2 key
+				platformAdapter.setP2StartButtonDown(true);
+				break;
+			case 0x33:
+				//3 key
+				platformAdapter.setCoin(true);
+				break;
+			case 0x34:
+				//4 key, sound test UFO
+				machine.writePortValue(3, 0x01);
+				break;
+			case 0x35:
+				//5 key, sound test shoot
+				machine.writePortValue(3, 0x02);
+				break;
+			case 0x36:
+				//6 key, sound test player die
+				machine.writePortValue(3, 0x04);
+				break;
+			case 0x37:
+				//7 key, sound test invader die
+				machine.writePortValue(3, 0x08);
+				break;
+			case 0x38:
+				//8 key, sound test fleet move 1
+				machine.writePortValue(5, 0x01);
+				break;
+			case 0x39:
+				//9 key, sound test fleet move 2
+				machine.writePortValue(5, 0x02);
+				break;
+			case 0x30:
+				//0 key, sound test fleet move 3
+				machine.writePortValue(5, 0x04);
+				break;
+			case VK_OEM_MINUS:
+				// - key, sound test fleet move 4
+				machine.writePortValue(5, 0x08);
+				break;
+			case VK_OEM_PLUS:
+				// + key, sound test UFO hit
+				machine.writePortValue(5, 0x10);
+				break;
 			default:
 				return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+		break;
+	case WM_KEYUP:
+		switch (wParam)
+		{
+		case VK_LEFT:
+			platformAdapter.setP1LeftButtonDown(false);
+			break;
+		case VK_SPACE:
+			platformAdapter.setP1ShootButtonDown(false);
+			break;
+		case VK_RIGHT:
+			platformAdapter.setP1RightButtonDown(false);
+			break;
+		case 0x58:
+			//x key
+			platformAdapter.setP2LeftButtonDown(false);
+			break;
+		case 0x43:
+			//c key
+			platformAdapter.setP2RightButtonDown(false);
+			break;
+		case 0x5A:
+			//z key
+			platformAdapter.setP2ShootButtonDown(false);
+			break;
+		case 0x31:
+			// 1 key
+			platformAdapter.setP1StartButtonDown(false);
+			break;
+		case 0x32:
+			//2 key
+			platformAdapter.setP2StartButtonDown(false);
+			break;
+		case 0x33:
+			//3 key
+			platformAdapter.setCoin(false);
+			break;
+		case 0x34:
+			//4 key
+			// clear sound bits
+			machine.writePortValue(3, 0x00);
+			break;
+		case 0x35:
+			//5 key
+			// clear sound bits
+			machine.writePortValue(3, 0x00);
+			break;
+		case 0x36:
+			// 6 key
+			// clear sound bits
+			machine.writePortValue(3, 0x00);
+			break;
+		case 0x37:
+			// 7 key
+			// clear sound bits
+			machine.writePortValue(3, 0x00);
+			break;
+		case 0x38:
+			// 8 key
+			// clear sound bits
+			machine.writePortValue(5, 0x00);
+			break;
+		case 0x39:
+			// 9 key
+			// clear sound bits
+			machine.writePortValue(5, 0x00);
+			break;
+		case 0x30:
+			// 0 key
+			// clear sound bits
+			machine.writePortValue(5, 0x00);
+			break;
+		case VK_OEM_MINUS:
+			// clear sound bits
+			machine.writePortValue(5, 0x00);
+			break;
+		case VK_OEM_PLUS:
+			// clear sound bits
+			machine.writePortValue(5, 0x00);
+			break;
+		default:
+			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
 		break;
     case WM_DESTROY:
@@ -376,6 +518,40 @@ void DrawScreen(HWND hWnd, HDC hdc)
 
 }
 
+//Reading bundled ROM file as resource instead of external file
+//https://stackoverflow.com/questions/9240188/how-to-load-a-custom-binary-resource-in-a-vc-static-library-as-part-of-a-dll
+void LoadROMIntoMemory()
+{
+	HRSRC hRomResource = FindResource(NULL, MAKEINTRESOURCE(IDR_ROM_FILE), RT_RCDATA);
+	if (!hRomResource)
+		return;
+
+	unsigned int romSize = SizeofResource(NULL, hRomResource);
+
+	HGLOBAL hRomData = LoadResource(NULL, hRomResource);
+	if (!hRomData)
+		return;
+
+	void* pRomBinaryData = LockResource(hRomData);
+	if (!pRomBinaryData)
+		return;
+
+	char* romArray = reinterpret_cast<char*>(pRomBinaryData);
+
+	//Create memory block and assign to memory
+	std::unique_ptr<std::vector<uint8_t>> memoryBlock =
+		std::make_unique<std::vector<uint8_t>>(0x4000);
+
+	memoryBlock->insert(memoryBlock->begin(), romArray, romArray + romSize);
+
+	//Assign memory
+	memory.setMemoryBlock(std::move(memoryBlock));
+
+	UnlockResource(hRomData);
+	FreeResource(hRomData);
+}
+
+/*
 void LoadROMIntoMemory()
 {
 	//Create memory block and assign to memory
@@ -407,7 +583,9 @@ void LoadROMIntoMemory()
 	}
 
 }
+*/
 
+//From MSDN documentation on PlaySound/sndPlaySound
 void PlaySoundResource(int lpResourceName)
 {
 	HRSRC hResInfo;
@@ -426,7 +604,7 @@ void PlaySoundResource(int lpResourceName)
 
 	lpWavInMemory = (LPCWSTR)LockResource(hRes);
 
-	sndPlaySound(lpWavInMemory, SND_MEMORY | SND_SYNC |
+	sndPlaySound(lpWavInMemory, SND_MEMORY | SND_ASYNC |
 		SND_NODEFAULT);
 
 	UnlockResource(hRes);

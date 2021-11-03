@@ -193,6 +193,10 @@
     <Media Include="7.wav" />
     <Media Include="8.wav" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\roms\invaders\invaders" />
+    <None Include="rcdata1.bin" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
