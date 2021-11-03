@@ -3166,6 +3166,7 @@ int Emulator8080::processInterrupt(
 
     if (interruptBytes.size() == 1) {
         auto interruptFunction = this->decode(interruptBytes.at(0));
+        this->enableInterrupts = false;
         return interruptFunction();
     } else {
         // handle bad instruction bytes
