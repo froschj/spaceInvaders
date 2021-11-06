@@ -94,27 +94,41 @@ void Machine::step()
 		processInput();
 	}
 
-	if (cycleCount < maxCycles / 60.0f)
-	{
-		//Step emulator
-		cycleCount += _emulator->step();
-	}
-
 	//Check time for refresh
 	//https://www.geeksforgeeks.org/measure-execution-time-function-cpp/
 	auto checkTime = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(checkTime - _frameStartTime);
 		
-	if (duration.count() > 16.6) //16.6 ms in a 1/60 sec frame
+	if (duration.count() > 16.6) //16.6 ms in a 1/60 sec frame, should really check for interrupt every half frame?
 	{
 		//TODO WIP interrupt
-		if (true /*_emulator->isInterruptEnable()*/)
-		{
-			//_emulator->testInterrupt();
-			_platformAdapter->refreshScreen();
-			_frameStartTime = std::chrono::high_resolution_clock::now();
-			cycleCount = 0;
+		bool isInterruptable = _emulator->isInterruptEnable();
+		if (isInterruptable)
+		{	//0xcf RST 1, 0xd7 RST 2
+			if (useRST1)
+			{
+				_emulator->requestInterrupt(RST1); 
+			}
+			else
+			{
+				_emulator->requestInterrupt(RST2);
+			}
+			
+			useRST1 = !useRST1;
 		}
+
+		
+		//Catch up the CPU for the 1/60 second
+		cycleCount = 0;
+		while (cycleCount < maxCycles / 60.0f)
+		{
+			//Step emulator
+			cycleCount += _emulator->step();
+		}
+
+		_frameStartTime = std::chrono::high_resolution_clock::now();
+		_platformAdapter->refreshScreen();
+		
 	}
 
 }

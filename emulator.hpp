@@ -93,7 +93,8 @@ class Emulator8080 :
         ~Emulator8080();
         int step() override; // "execute" an instruction
         void reset(uint16_t address = 0x0000); // put the pc at an address
-        inline bool isInterruptEnable() { return enableInterrupts; }
+
+		inline bool isInterruptEnable() { return enableInterrupts; }
 
         // connectMemory(Memory*) provided by paretnt class
 
@@ -104,8 +105,6 @@ class Emulator8080 :
         // connect a callback for the IN instruction
         // function returns value, argument in port address
         void connectInput(std::function<uint8_t(uint8_t)> inputFunction);
-
-		void testInterrupt();
 
         // request an interrupt. Accepts a one-byte 8080 opcode
         // returns the number of CPU clock cycles to process the interrupt

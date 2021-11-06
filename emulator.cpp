@@ -200,6 +200,15 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+
+	// (0x08) - Do nothing
+	opcodes.insert({ 0x08,
+		[this]() {
+			++this->state.pc;
+			return 4;
+		}
+	});
+
     // DAD B (0x09) HL = HL + BC:
     // 10 cycles, 1 byte
     // CY
@@ -283,6 +292,13 @@ void Emulator8080::buildMap() {
             return 4;
         } 
     } );
+	// (0x10) - Do nothing
+	opcodes.insert({ 0x10,
+		[this]() {
+			++this->state.pc;
+			return 4;
+		}
+	});
     // LXI D (0x11) D <- byte 3, E <- byte 2: 
     // 10 cycles, 3 bytes
     // no flags
@@ -369,6 +385,13 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+	//0x18 - do nothing
+	opcodes.insert({ 0x18,
+		[this]() {
+			++this->state.pc;
+			return 4;
+		}
+	});
     // DAD D (0x19) HL = HL + DE;
     // 10 cycles, 1 byte
     // CY
@@ -379,6 +402,16 @@ void Emulator8080::buildMap() {
             return 10;
         } 
     } );
+	
+	//0x20 - do nothing
+	opcodes.insert({ 0x20,
+		[this]() {			
+			++this->state.pc;
+			return 4;
+		}
+	});
+	
+
     // LDAX D (0x1a) A <- (DE): 
     // 7 cycles, 1 byte
     // no flags
@@ -563,6 +596,13 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+	//0x28 - do nothing
+	opcodes.insert({ 0x28,
+		[this]() {
+			++this->state.pc;
+			return 4;
+		}
+	});
     // DAD H (0x29) HL = HL + HL
     // 10 cycles, 1 byte
     // CY
@@ -641,6 +681,13 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+	//0x30 - do nothing
+	opcodes.insert({ 0x30,
+		[this]() {
+			++this->state.pc;
+			return 4;
+		}
+	});
     // LXI SP (0x31) SP.hi <- byte 3, SP.lo <- byte 2: 
     // 10 cycles, 3 bytes
     // no flags
@@ -728,6 +775,13 @@ void Emulator8080::buildMap() {
             return 4; 
         } 
     } );
+	//0x38 - do nothing
+	opcodes.insert({ 0x38,
+		[this]() {
+			++this->state.pc;
+			return 4;
+		}
+	});
     // DAD SP (0x39) HL = HL + SP
     // 10 cycles, 1 byte
     // CY
@@ -1342,7 +1396,16 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } ); 
-// HLT (0x76) not implemented
+	// HLT (0x76) not implemented - do nothing
+	/*
+	opcodes.insert({ 0x76,
+		[this]() {
+			++this->state.pc;
+			return 7;
+		}
+	});
+	*/
+
     // MOV M,A (0x77) (HL) <- A:
     // 7 cycles, 1 byte
     // no flags
@@ -2274,6 +2337,13 @@ void Emulator8080::buildMap() {
             return 10;
         } 
     } );
+	//0xcb - do nothing
+	opcodes.insert({ 0xcb,
+		[this]() {
+			++this->state.pc;
+			return 4;
+		}
+	});
     // CZ (0xcc) if if Z, CALL adr
     // 17 cycles if call; otherwise 11, 3 bytes
     // no flags
@@ -2440,6 +2510,13 @@ void Emulator8080::buildMap() {
             }
         } 
     } );
+	//0xd9 - do nothing
+	opcodes.insert({ 0xd9,
+		[this]() {
+			++this->state.pc;
+			return 4;
+		}
+	});
     // JC (0xda) if CY, PC<-adr
     // 10 cycles, 3 bytes
     // no flags
@@ -2482,6 +2559,13 @@ void Emulator8080::buildMap() {
             
         } 
     } );
+	//0xdd - do nothing
+	opcodes.insert({ 0xdd,
+		[this]() {
+			++this->state.pc;
+			return 4;
+		}
+	});
     // SBI (0xde) A <- A - data - CY
     // 7 cycles, 2 bytes
     // Z, S, P, CY, AC
@@ -2680,6 +2764,13 @@ void Emulator8080::buildMap() {
             }
         } 
     } );
+	//0xed - do nothing
+	opcodes.insert({ 0xed,
+		[this]() {
+			++this->state.pc;
+			return 4;
+		}
+	});
     // XRI (0xee) A <- A ^ data:
     // 7 cycles, 2 bytes
     // Z, S, P, CY, AC
@@ -2865,6 +2956,13 @@ void Emulator8080::buildMap() {
             
         } 
     } );
+	//0xfd - do nothing
+	opcodes.insert({ 0xfd,
+		[this]() {
+			++this->state.pc;
+			return 4;
+		}
+	});
     // CPI (0xfe) A - data:
     // 7 cycles, 2 bytes
     // Z, S, P, CY, AC
@@ -2882,7 +2980,7 @@ void Emulator8080::buildMap() {
     // RST 7 (0xff) CALL 0x0038
     // 11 cycles, 1 byte
     // no flags
-    opcodes.insert( { 0xfe, 
+    opcodes.insert( { 0xff, 
         [this](){
             this->callAddress(0x0038, true);
             return 11; 
@@ -3145,13 +3243,6 @@ uint8_t Emulator8080::xorWithAccumulator(uint8_t value) {
     this->updateSignFlag(result);
     this->updateParityFlag(result);
     return result;
-}
-
-//TODO replace with interrupt
-void Emulator8080::testInterrupt()
-{
-	callAddress(16, false);
-		
 }
 
 // trigger an interrupt
