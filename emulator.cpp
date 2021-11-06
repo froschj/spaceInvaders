@@ -2225,7 +2225,15 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
-// RST 0 (0xc7) no implemented
+    // RST 0 (0xc7) CALL 0x0000
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xc7, 
+        [this](){
+            this->callAddress(0x0000, true);
+            return 11; 
+        } 
+    } );
     // RZ (0xc8) if Z, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2304,7 +2312,15 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
-// RST 1 (0xcf) no implemented
+    // RST 1 (0xcf) CALL 0x0008
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xcf, 
+        [this](){
+            this->callAddress(0x0008, true);
+            return 11; 
+        } 
+    } );
     // RNC (0xd0) if NCY, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2401,7 +2417,15 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
-// RST 2 (0xd7) not implemented
+    // RST 2 (0xd7) CALL 0x0010
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xd7, 
+        [this](){
+            this->callAddress(0x0010, true);
+            return 11; 
+        } 
+    } );
     // RC (0xd8) if CY, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2472,7 +2496,15 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
-// RST 3 (0xdf) not implemented
+    // RST 3 (0xdf) CALL 0x0018
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xdf, 
+        [this](){
+            this->callAddress(0x0018, true);
+            return 11; 
+        } 
+    } );
     // RPO (0xe0) if PO, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2570,7 +2602,15 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
-// RST 4 (0xe7) not implemented
+    // RST 4 (0xe7) CALL 0x0020
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xe7, 
+        [this](){
+            this->callAddress(0x0020, true);
+            return 11; 
+        } 
+    } );
     // RPE (0xe8) if PE, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2652,7 +2692,15 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
-// RST 5 (0xef) not implemented
+    // RST 5 (0xef) CALL 0x0028
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xef, 
+        [this](){
+            this->callAddress(0x0028, true);
+            return 11; 
+        } 
+    } );
     // RP (0xf0) if P, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -2744,7 +2792,15 @@ void Emulator8080::buildMap() {
             return 7; 
         } 
     } );
-// RST 6 (0xf7) not implemented
+    // RST 6 (0xf7) CALL 0x0030
+    // 11 cycles, 1 byte
+    // no flags
+    opcodes.insert( { 0xf7, 
+        [this](){
+            this->callAddress(0x0030, true);
+            return 11; 
+        } 
+    } );
     // RM (0xf8) if M, RET
     // 11 cycles if return; otherwise 5, 1 byte
     // no flags
@@ -3096,4 +3152,62 @@ void Emulator8080::testInterrupt()
 {
 	callAddress(16, false);
 		
+}
+
+// trigger an interrupt
+// accepts an initializer list of bytes representing an 8080 instruction
+// only one-byte instructions currently implemented
+// returns # of cpu clock cycles to handle interrupt
+int Emulator8080::processInterrupt(
+    std::initializer_list<uint8_t> instructionBytes
+) {
+    if (!(this->enableInterrupts)) return 0;
+    std::vector<uint8_t> interruptBytes = instructionBytes;
+
+    if (interruptBytes.size() == 1) {
+        auto interruptFunction = this->decode(interruptBytes.at(0));
+        this->enableInterrupts = false;
+        return interruptFunction();
+    } else {
+        // handle bad instruction bytes
+        std::stringstream badOpcode;
+        badOpcode << "$" 
+        << std::setw(2) << std::hex << std::setfill('0') 
+        << static_cast<int>(interruptBytes.at(0));
+        throw UnimplementedInterruptError(badOpcode.str());
+    }
+    
+}
+
+// request an interrupt. Accepts a one-byte 8080 opcode
+// returns the number of CPU clock cycles to process the interrupt
+int Emulator8080::requestInterrupt(uint8_t opcode) {
+    if (
+        ((opcode >= 0x3f) && (opcode <= 0xc1))
+        || (((0xf & opcode) == 0x0) && ((opcode == 0x00) || (opcode > 0x3f)))
+        || (((0xf & opcode) == 0x1) && (opcode > 0x3f))
+        || (((0xf & opcode) == 0x2) && (opcode < 0x20))
+        || (((0xf & opcode) == 0x3) && ((opcode < 0xc0) || (opcode > 0xdf)))
+        || (((0xf & opcode) == 0x4) && (opcode < 0xc0))
+        || ((0xf & opcode) == 0x5)
+        // 0x6 covered by 1st case
+        || ((0xf & opcode) == 0x7)
+        || (((0xf & opcode) == 0x8) && (opcode > 0x3f))
+        || (((0xf & opcode) == 0x9) && (opcode != 0xd9))
+        || (((0xf & opcode) == 0xa) && (opcode < 0x20))
+        || (((0xf & opcode) == 0xb) && ((opcode < 0xc0) || (opcode > 0xdf)))
+        || (((0xf & opcode) == 0xc) && (opcode < 0x20))
+        || (((0xf & opcode) == 0xd) && (opcode < 0x20))
+        // 0xe covered by 1st case
+        || ((0xf & opcode) == 0xf)
+    ) {
+        return this->processInterrupt({opcode});
+    } else {
+        // handle bad instruction bytes
+        std::stringstream badOpcode;
+        badOpcode << "$" 
+        << std::setw(2) << std::hex << std::setfill('0') 
+        << static_cast<int>(opcode);
+        throw UnimplementedInterruptError(badOpcode.str());
+    }
 }

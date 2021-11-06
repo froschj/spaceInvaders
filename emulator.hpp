@@ -13,6 +13,7 @@
 #include <iostream>
 #include <string>
 #include <functional>
+#include <initializer_list>
 
 
 /*
@@ -106,6 +107,11 @@ class Emulator8080 :
 
 		void testInterrupt();
 
+        // request an interrupt. Accepts a one-byte 8080 opcode
+        // returns the number of CPU clock cycles to process the interrupt
+        int requestInterrupt(uint8_t opcode);
+
+
     private:
         // fetch instruction at address
         uint8_t fetch(uint16_t address);
@@ -156,7 +162,32 @@ class Emulator8080 :
         // encapusulate call procedures
         void callAddress(uint16_t address, bool isReset = false);
         bool enableInterrupts;
+
+        // trigger an interrupt
+        // accepts an initializer list of bytes representing an 8080 instruction
+        // only one-byte instructions currently implemented
+        // returns # of cpu clock cycles to handle interrupt
+        int processInterrupt(std::initializer_list<uint8_t> instructionBytes);
      
+};
+
+/*
+ * A meaningful exception to throw if the "processor" encounters an
+ * unknown or unimplemented opcode
+ */
+class UnimplementedInterruptError : public std::exception {
+    private:
+        std::string msg;
+    public:
+        UnimplementedInterruptError(
+                const std::string& opcode 
+        ) : 
+                msg(
+                    std::string("Invalid interrupt instruction ") 
+                    + opcode){}
+        virtual const char *what() const throw() {
+            return msg.c_str();
+        }
 };
 
 #endif
