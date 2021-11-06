@@ -8,6 +8,19 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
+#include <exception>
+#include <string>
+
+class invalidRomError : public std::exception {
+    private:
+        std::string msg;
+    public:
+        invalidRomError() : 
+                msg(std::string("Invalid memory size")){}
+        virtual const char *what() const throw() {
+            return msg.c_str();
+        }
+};
 
 class Memory {
     public:
@@ -33,7 +46,7 @@ class Memory {
         // high address of memory
         uint16_t getHighAddress();
 		//Update the memory block
-		void setMemoryBlock(std::unique_ptr<std::vector<uint8_t>> data);
+		virtual void setMemoryBlock(std::unique_ptr<std::vector<uint8_t>> data);
     protected:
         int words; // size of memory buffer in words
         uint16_t startOffset; // offset to beginning of address range
@@ -44,10 +57,13 @@ class Memory {
 /* ~TODO~ */
 class SpaceInvaderMemory : public Memory {
     public:
-        SpaceInvaderMemory(std::unique_ptr<std::vector<uint8_t>> code);
+        SpaceInvaderMemory();
         uint8_t read(uint16_t address) const override;
         void write(uint8_t word, uint16_t address) override;
+        ~SpaceInvaderMemory();
+        void setMemoryBlock(std::unique_ptr<std::vector<uint8_t>> data) override;
     private:
+        const uint16_t ADDRESS_MASK = 0x3fff;
 };
 
 #endif

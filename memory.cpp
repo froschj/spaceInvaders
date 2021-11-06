@@ -63,3 +63,35 @@ void Memory::setMemoryBlock(std::unique_ptr<std::vector<uint8_t>> data)
 {
 	this->contents = std::move(data);
 }
+
+SpaceInvaderMemory::SpaceInvaderMemory() {
+    this->words = 4000;
+    this->startOffset = 0;
+    contents = std::make_unique<std::vector<uint8_t>> (this->words, 0);
+}
+
+void SpaceInvaderMemory::setMemoryBlock(
+    std::unique_ptr<std::vector<uint8_t>> data
+) {
+    if (data->size() == 4000) {
+        Memory::setMemoryBlock(std::move(data));
+    } else {
+        throw invalidRomError();
+    }
+}
+uint8_t SpaceInvaderMemory::read(uint16_t address) const  {
+    // mask the address so that mirroring works
+    address &= this->ADDRESS_MASK;
+    return Memory::read(address);
+}
+void SpaceInvaderMemory::write(uint8_t word, uint16_t address) {
+    // mask the address so mirroring works
+    address &= this->ADDRESS_MASK;
+    // only write if this is a RAM address
+    if (address > 0x1fff) {
+        Memory::write(word, address);
+    } 
+}
+
+// No destructor actions required
+SpaceInvaderMemory::~SpaceInvaderMemory() {}
