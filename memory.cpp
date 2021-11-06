@@ -3,6 +3,7 @@
  */
 #include "memory.hpp"
 #include <cstdint>
+#include <stdexcept>
 //#include <memory>
 
 //Empty constructor
@@ -65,7 +66,7 @@ void Memory::setMemoryBlock(std::unique_ptr<std::vector<uint8_t>> data)
 }
 
 SpaceInvaderMemory::SpaceInvaderMemory() {
-    this->words = 4000;
+    this->words = 0x4000;
     this->startOffset = 0;
     contents = std::make_unique<std::vector<uint8_t>> (this->words, 0);
 }
@@ -73,7 +74,7 @@ SpaceInvaderMemory::SpaceInvaderMemory() {
 void SpaceInvaderMemory::setMemoryBlock(
     std::unique_ptr<std::vector<uint8_t>> data
 ) {
-    if (data->size() == 4000) {
+    if (data->size() == 0x4000) {
         Memory::setMemoryBlock(std::move(data));
     } else {
         throw invalidRomError();
@@ -91,6 +92,21 @@ void SpaceInvaderMemory::write(uint8_t word, uint16_t address) {
     if (address > 0x1fff) {
         Memory::write(word, address);
     } 
+}
+
+void SpaceInvaderMemory::flashROM(uint8_t* romData, int romSize, int startAddress) {
+	Memory::flashROM(romData, romSize, startAddress);
+}
+
+void Memory::flashROM(uint8_t* romData, int romSize, int startAddress) {
+	for (int i = startAddress; i < (romSize + startAddress); ++i) {
+		try {
+			this->contents->at(i) = romData[i];
+		}
+		catch (const std::out_of_range& oor) {
+			throw invalidRomError();
+		}
+	}
 }
 
 // No destructor actions required

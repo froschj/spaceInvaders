@@ -47,6 +47,7 @@ class Memory {
         uint16_t getHighAddress();
 		//Update the memory block
 		virtual void setMemoryBlock(std::unique_ptr<std::vector<uint8_t>> data);
+		virtual void flashROM(uint8_t* romData, int romSize, int startAddress);
     protected:
         int words; // size of memory buffer in words
         uint16_t startOffset; // offset to beginning of address range
@@ -62,6 +63,7 @@ class SpaceInvaderMemory : public Memory {
         void write(uint8_t word, uint16_t address) override;
         ~SpaceInvaderMemory();
         void setMemoryBlock(std::unique_ptr<std::vector<uint8_t>> data) override;
+		void flashROM(uint8_t* romData, int romSize = 0x2000, int startAddress = 0x0000) override;
     private:
         const uint16_t ADDRESS_MASK = 0x3fff;
 };

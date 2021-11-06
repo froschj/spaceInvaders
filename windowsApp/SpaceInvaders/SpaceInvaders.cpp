@@ -10,6 +10,7 @@
 #include "emulator.hpp"
 #include <vector>
 #include <fstream>
+#include <memory>
 
 #define MAX_LOADSTRING 100
 
@@ -43,7 +44,7 @@ void RefreshScreen();
 
 Adapter platformAdapter;
 Machine machine;
-Memory memory;
+std::unique_ptr<SpaceInvaderMemory> memory = nullptr;
 Emulator8080 emulator;
 uint8_t* g_videoBuffer;
 bool g_gameRunning;
@@ -83,10 +84,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	machine.setPlatformAdapter(&platformAdapter);
 
+	memory = std::make_unique<SpaceInvaderMemory>();
+
 	LoadROMIntoMemory();
 
 	//Create emulator with assigned memory
-	emulator.connectMemory(&memory);
+	emulator.connectMemory(memory.get());
 	emulator.reset(0x0000);
 
 	//Connect machine to emulator
@@ -460,7 +463,7 @@ void DrawScreen(HWND hWnd, HDC hdc)
 	for (int i = 0x2400; i < 0x4000; ++i)
 	{
 		
-		uint8_t bitBlock = memory.read(i);
+		uint8_t bitBlock = memory->read(i);
 
 		//bitBlock = 0x65; //Test value 0110 0101, uncomment to verify screen is being drawn		
 		
@@ -536,16 +539,10 @@ void LoadROMIntoMemory()
 	if (!pRomBinaryData)
 		return;
 
-	char* romArray = reinterpret_cast<char*>(pRomBinaryData);
+	uint8_t* romArray = reinterpret_cast<uint8_t*>(pRomBinaryData);
 
-	//Create memory block and assign to memory
-	std::unique_ptr<std::vector<uint8_t>> memoryBlock =
-		std::make_unique<std::vector<uint8_t>>(0x4000);
-
-	memoryBlock->insert(memoryBlock->begin(), romArray, romArray + romSize);
-
-	//Assign memory
-	memory.setMemoryBlock(std::move(memoryBlock));
+	// copy the ROM resource into the memory object for the processor
+	memory->flashROM(romArray, romSize);
 
 	UnlockResource(hRomData);
 	FreeResource(hRomData);
@@ -575,7 +572,7 @@ void LoadROMIntoMemory()
 		romFile.close();
 
 		//Assign memory
-		memory.setMemoryBlock(std::move(memoryBlock));
+		memory->setMemoryBlock(std::move(memoryBlock));
 	}
 	else
 	{
