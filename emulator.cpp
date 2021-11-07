@@ -2998,9 +2998,7 @@ uint16_t Emulator8080::readAddressFromMemory(uint16_t atAddress) {
 // set up return address on stack and set jump address
 void Emulator8080::callAddress(uint16_t address, bool isReset) {
     // advance pc to next instruction
-    if (isReset) {
-        ++this->state.pc;
-    } else {
+    if (!isReset) {
         this->state.pc += 3;
     }
     // push high byte of next pc
