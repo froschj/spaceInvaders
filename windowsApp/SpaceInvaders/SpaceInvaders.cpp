@@ -52,6 +52,10 @@ bool g_screenNeedsRefresh;
 
 HWND g_hWndGameWindow;
 
+const int NUMBER_OF_COLORS = 4;
+
+RGBQUAD COLOR_TABLE[NUMBER_OF_COLORS];
+
 //end declares
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -67,6 +71,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	//Create gui app video buffer
 	int screenPixelBufferSize = 256 * 224; //57344 total pixels
 	g_videoBuffer = reinterpret_cast<uint8_t*>(std::malloc(screenPixelBufferSize * sizeof(uint8_t)));
+
+	COLOR_TABLE[0] = RGBQUAD{ 0x00,0x00,0x00,0 }; // color 0, black for background
+	COLOR_TABLE[1] = RGBQUAD{ 0xff,0xff,0xff,0 }; // color 1, white for foreground
+	COLOR_TABLE[2] = RGBQUAD{ 0x44,0x11,0xff,0 }; // color 2, magenta for upper foreground band
+	COLOR_TABLE[3] = RGBQUAD{ 0x08,0x9d,0x13,0 }; // color 3, green for upper foreground band
 
 	//Connect machine and platform sound output
 	platformAdapter.setShootFunction(&PlaySoundShoot);
@@ -145,7 +154,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		machine.step();
 		
 	}
-
+	free(g_videoBuffer);
     return (int) msg.wParam;
 }
 
@@ -482,16 +491,31 @@ void DrawScreen(HWND hWnd, HDC hdc)
 		*/
 
 		//Rotate pixels counter-clockwise, so draw every column bottom-up
-		uint8_t low = 0x00;
-		uint8_t high = 0xFF;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 0) & 0x1 ? high : low;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 1) & 0x1 ? high : low;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 2) & 0x1 ? high : low;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 3) & 0x1 ? high : low;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 4) & 0x1 ? high : low;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 5) & 0x1 ? high : low;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 6) & 0x1 ? high : low;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 7) & 0x1 ? high : low;
+		uint8_t background = 0x00;
+		//uint8_t high = 0xFF;
+		auto foreground = [](int row, int column)
+		{
+			if ((row <= 32) || ((row > 64) && (row <= 184)) || ((row > 240) && ((column <= 15) || (column > 134))))
+			{
+				return 0x01; //white
+			} 
+			else if (row > 32 && row <= 64)
+			{
+				return 0x02; //magenta
+			}
+			else
+			{
+				return 0x03; //green
+			}
+		};
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 0) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 1) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 2) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 3) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 4) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 5) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 6) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 7) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
 
 		if (rowIndex < 0)
 		{
@@ -501,14 +525,21 @@ void DrawScreen(HWND hWnd, HDC hdc)
 		
 	}
 
-	BITMAPINFO bi{};
-	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bi.bmiHeader.biWidth = width;
-	bi.bmiHeader.biHeight = -height;
-	bi.bmiHeader.biPlanes = 1;
-	bi.bmiHeader.biBitCount = bitCount;
-	bi.bmiHeader.biCompression = BI_RGB;
+	BITMAPINFO* bi = (BITMAPINFO*)malloc(sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
+	if (!bi) exit(EXIT_FAILURE);
+	memset(bi, 0, sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
+	bi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bi->bmiHeader.biWidth = width;
+	bi->bmiHeader.biHeight = -height;
+	bi->bmiHeader.biPlanes = 1;
+	bi->bmiHeader.biBitCount = bitCount;
+	bi->bmiHeader.biCompression = BI_RGB;
+	bi->bmiHeader.biClrUsed = NUMBER_OF_COLORS;
 
+	for (int i = 0; i < NUMBER_OF_COLORS; ++i) 
+	{
+		bi->bmiColors[i] = COLOR_TABLE[i];
+	}
 
 	//Get current screen size
 	RECT clientRect;
@@ -517,8 +548,8 @@ void DrawScreen(HWND hWnd, HDC hdc)
 	int targetHeight = clientRect.bottom - clientRect.top;
 
 	//TODO Find the correct ratio to fit in the screen	
-	int x = StretchDIBits(hdc, 0, 0, targetWidth, targetHeight, 0, 0, width, height, g_videoBuffer, &bi, DIB_RGB_COLORS, SRCCOPY);
-
+	int x = StretchDIBits(hdc, 0, 0, targetWidth, targetHeight, 0, 0, width, height, g_videoBuffer, bi, DIB_RGB_COLORS, SRCCOPY);
+	free(bi);
 }
 
 //Reading bundled ROM file as resource instead of external file
