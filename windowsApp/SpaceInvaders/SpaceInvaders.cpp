@@ -26,7 +26,7 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 //SpaceInvaders variables and forward declares
-void PlaySoundResource(int lpResourceName, bool looping);
+//void PlaySoundResource(int lpResourceName, bool looping);
 void PlaySoundPlayerDie();
 void PlaySoundFleetMove1();
 void PlaySoundFleetMove2();
@@ -474,24 +474,7 @@ void DrawScreen(HWND hWnd, HDC hdc)
 	int columnIndex = 0;
 	for (int i = 0x2400; i < 0x4000; ++i)
 	{
-		
 		uint8_t bitBlock = memory->read(i);
-
-		//bitBlock = 0x65; //Test value 0110 0101, uncomment to verify screen is being drawn		
-		
-		/*
-		//This draws the screen as in memory, which is rotated 90' clockwise
-		g_videoBuffer[bufferIndex] = (bitBlock >> 0) & 0x1 ? 255 : 0;  
-		g_videoBuffer[bufferIndex + 1] = (bitBlock >> 1) & 0x1 ? 255 : 0;  
-		g_videoBuffer[bufferIndex + 2] = (bitBlock >> 2) & 0x1 ? 255 : 0; 
-		g_videoBuffer[bufferIndex + 3] = (bitBlock >> 3) & 0x1 ? 255 : 0; 
-		g_videoBuffer[bufferIndex + 4] = (bitBlock >> 4) & 0x1 ? 255 : 0;
-		g_videoBuffer[bufferIndex + 5] = (bitBlock >> 5) & 0x1 ? 255 : 0;
-		g_videoBuffer[bufferIndex + 6] = (bitBlock >> 6) & 0x1 ? 255 : 0;
-		g_videoBuffer[bufferIndex + 7] = (bitBlock >> 7) & 0x1 ? 255 : 0;
-
-		bufferIndex += 8;
-		*/
 
 		//Rotate pixels counter-clockwise, so draw every column bottom-up
 		uint8_t background = 0x00;
