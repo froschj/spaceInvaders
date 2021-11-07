@@ -102,13 +102,15 @@ void Machine::step()
 		
 	if (duration.count() > 8333) //16666 microsec in a 1/60 sec frame, check for interrupt every half frame
 	{
+		bool drawScreen = false;
 		//TODO WIP interrupt
 		bool isInterruptable = _emulator->isInterruptEnable();
 		if (isInterruptable)
 		{	//0xcf RST 1, 0xd7 RST 2
 			if (useRST1)
-			{
+			{	//End of frame interrupt
 				_emulator->requestInterrupt(RST1); 
+				drawScreen = true;
 			}
 			else
 			{
@@ -125,10 +127,14 @@ void Machine::step()
 		{
 			//Step emulator
 			cycleCount += _emulator->step();
+		}	
+		
+		if (drawScreen)
+		{
+			_platformAdapter->refreshScreen();		
 		}
 
 		_frameStartTime = std::chrono::high_resolution_clock::now();
-		_platformAdapter->refreshScreen();		
 	}
 
 }
@@ -299,8 +305,13 @@ void Machine::writePortValue(uint8_t port, uint8_t value)
 				//TODO the UFO sound repeats, need to implement that behavior
 				if (value & 0x01 && !(_prev_port3 & 0x01))
 				{
-					//bit 0
-					_platformAdapter->playSoundUFO();
+					//bit 0 - ufo sound started
+					_platformAdapter->startSoundUFO();
+				}
+				if (!(value & 0x01) && (_prev_port3 & 0x01))
+				{
+					//bit 0 - ufo sound stopped
+					_platformAdapter->stopSoundUFO();
 				}
 				 if (value & 0x02 && !(_prev_port3 & 0x02))
 				{

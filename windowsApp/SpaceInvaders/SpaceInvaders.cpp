@@ -26,7 +26,7 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 //SpaceInvaders variables and forward declares
-void PlaySoundResource(int lpResourceName);
+void PlaySoundResource(int lpResourceName, bool looping);
 void PlaySoundPlayerDie();
 void PlaySoundFleetMove1();
 void PlaySoundFleetMove2();
@@ -34,7 +34,8 @@ void PlaySoundFleetMove3();
 void PlaySoundFleetMove4();
 void PlaySoundInvaderDie();
 void PlaySoundShoot();
-void PlaySoundUFO();
+void StartSoundUFO();
+void StopSoundUFO();
 void PlaySoundUFOHit();
 
 void DrawScreen(HWND hWnd, HDC hdc);
@@ -81,7 +82,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	platformAdapter.setShootFunction(&PlaySoundShoot);
 	platformAdapter.setPlayerDieSoundFunction(&PlaySoundPlayerDie);
 	platformAdapter.setInvaderDieFunction(&PlaySoundInvaderDie);
-	platformAdapter.setUFOFunction(&PlaySoundUFO);
+	platformAdapter.setStartUFOFunction(&StartSoundUFO);
+	platformAdapter.setStopUFOFunction(&StopSoundUFO);
 	platformAdapter.setUFOHitFunction(&PlaySoundUFOHit);
 	platformAdapter.setFleetMove1Function(&PlaySoundFleetMove1);
 	platformAdapter.setFleetMove2Function(&PlaySoundFleetMove2);
@@ -120,19 +122,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_SPACEINVADERS));
 
     MSG msg;
-
-    // Main message loop:
-	/*
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
-	*/
-
+	 
 	//Main game loop
 	g_gameRunning = true;
 	while (g_gameRunning)
@@ -231,6 +221,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
+	case WM_CREATE:
+		{	
+			//Open sound files with aliases
+			mciSendString(_T("open 1.wav alias shoot"), NULL, 0, 0);
+			mciSendString(_T("open 2.wav alias playerDie"), NULL, 0, 0);
+			mciSendString(_T("open 4.wav alias fleetMove1"), NULL, 0, 0);
+			mciSendString(_T("open 5.wav alias fleetMove2"), NULL, 0, 0);
+			mciSendString(_T("open 6.wav alias fleetMove3"), NULL, 0, 0);
+			mciSendString(_T("open 7.wav alias fleetMove4"), NULL, 0, 0);
+			mciSendString(_T("open 3.wav alias invaderDie"), NULL, 0, 0);
+			mciSendString(_T("open 8.wav alias ufoHit"), NULL, 0, 0);
+		}
+		break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -579,42 +582,9 @@ void LoadROMIntoMemory()
 	FreeResource(hRomData);
 }
 
-/*
-void LoadROMIntoMemory()
-{
-	//Create memory block and assign to memory
-	std::unique_ptr<std::vector<uint8_t>> memoryBlock =
-		std::make_unique<std::vector<uint8_t>>(0x4000);
-
-	//Read ROM into the memory
-	//https://www.cplusplus.com/doc/tutorial/files/
-	std::ifstream romFile;
-
-	//Open file for reading, at end of file
-	romFile.open("..\\..\\roms\\invaders\\invaders", std::ios::binary|std::ios::ate);
-	if (romFile.is_open())
-	{
-		// Get file size
-		int romLength = romFile.tellg();
-		// Reset file pointer to beginning
-		romFile.seekg(0, std::ios::beg);
-		// Create a buffer and read into it
-		romFile.read(reinterpret_cast<char*>(memoryBlock->data()), romLength);
-		romFile.close();
-
-		//Assign memory
-		memory->setMemoryBlock(std::move(memoryBlock));
-	}
-	else
-	{
-		std::cerr << "Failed to read ROM file" << std::endl;
-	}
-
-}
-*/
-
 //From MSDN documentation on PlaySound/sndPlaySound
-void PlaySoundResource(int lpResourceName)
+/*
+void PlaySoundResource(int lpResourceName, bool looping=false)
 {
 	HRSRC hResInfo;
 	HANDLE hRes;
@@ -632,56 +602,78 @@ void PlaySoundResource(int lpResourceName)
 
 	lpWavInMemory = (LPCWSTR)LockResource(hRes);
 
-	sndPlaySound(lpWavInMemory, SND_MEMORY | SND_ASYNC |
-		SND_NODEFAULT);
+	if (looping)
+	{
+		sndPlaySound(lpWavInMemory, SND_MEMORY | SND_ASYNC | SND_LOOP |
+			SND_NODEFAULT);
+	}
+	else
+	{
+		sndPlaySound(lpWavInMemory, SND_MEMORY | SND_ASYNC |
+			SND_NODEFAULT);
+	}
 
 	UnlockResource(hRes);
 	FreeResource(hRes);
 }
+*/
 
 void PlaySoundPlayerDie()
 {
-	PlaySoundResource(IDR_PLAYER_DIE);
+	//PlaySoundResource(IDR_PLAYER_DIE);
+	mciSendString(_T("play playerDie from 0"), NULL, 0, 0);
 }
 
 void PlaySoundFleetMove1()
 {
-	PlaySoundResource(IDR_FLEET_MOVE_1);
+	//PlaySoundResource(IDR_FLEET_MOVE_1);
+	mciSendString(_T("play fleetMove1 from 0"), NULL, 0, 0);
 }
 
 void PlaySoundFleetMove2()
 {
-	PlaySoundResource(IDR_FLEET_MOVE_2);
+	//PlaySoundResource(IDR_FLEET_MOVE_2);
+	mciSendString(_T("play fleetMove2 from 0"), NULL, 0, 0);
 }
 
 void PlaySoundFleetMove3()
 {
-	PlaySoundResource(IDR_FLEET_MOVE_3);
+	//PlaySoundResource(IDR_FLEET_MOVE_3);
+	mciSendString(_T("play fleetMove3 from 0"), NULL, 0, 0);
 }
 
 void PlaySoundFleetMove4()
 {
-	PlaySoundResource(IDR_FLEET_MOVE_4);
+	//PlaySoundResource(IDR_FLEET_MOVE_4);
+	mciSendString(_T("play fleetMove4 from 0"), NULL, 0, 0);
 }
 
 void PlaySoundInvaderDie()
 {
-	PlaySoundResource(IDR_INVADER_DIE);
+	//PlaySoundResource(IDR_INVADER_DIE);
+	mciSendString(_T("play invaderDie from 0"), NULL, 0, 0);
 }
 
 void PlaySoundShoot()
 {
-	PlaySoundResource(IDR_SHOOT);
+	//PlaySoundResource(IDR_SHOOT);
+	mciSendString(_T("play shoot from 0"), NULL, 0, 0);
 }
 
-void PlaySoundUFO()
+void StartSoundUFO()
 {
-	PlaySoundResource(IDR_UFO);
+	PlaySound(_T("0.wav"), NULL, SND_LOOP | SND_ASYNC);
+}
+
+void StopSoundUFO()
+{
+	PlaySound(NULL, NULL, 0);
 }
 
 void PlaySoundUFOHit()
 {
-	PlaySoundResource(IDR_UFO_HIT);
+	//PlaySoundResource(IDR_UFO_HIT);
+	mciSendString(_T("play ufoHit from 0"), NULL, 0, 0);
 }
 
 void RefreshScreen()
@@ -689,38 +681,3 @@ void RefreshScreen()
 	InvalidateRect(g_hWndGameWindow, 0, 0);
 }
 
-/*
-void DrawScreenExample(HDC hdc)
-{
-
-	void* p = VirtualAlloc(NULL, 512 * 512 * 4, MEM_COMMIT, PAGE_READWRITE);
-
-
-	if (p == NULL)
-		return;
-
-	PBYTE bytes = reinterpret_cast<PBYTE>(p);
-	if (bytes == NULL)
-		return;
-
-	for (int i = 0; i < 512 * 512 * 4; ++i)
-	{
-		bytes[i] = rand() % 256;
-	}
-
-
-	BITMAPINFO bi{};
-	bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bi.bmiHeader.biWidth = 512;
-	bi.bmiHeader.biHeight = -512;
-	bi.bmiHeader.biPlanes = 1;
-	bi.bmiHeader.biBitCount = 32;
-	bi.bmiHeader.biCompression = BI_RGB;
-	int x = StretchDIBits(hdc, 0, 0, 512, 512, 0, 0, 512, 512, bytes, &bi, DIB_RGB_COLORS, SRCCOPY);
-
-	if (p)
-	{
-		VirtualFree(p, 0, MEM_RELEASE);
-	}
-}
-*/

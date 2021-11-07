@@ -205,6 +205,11 @@ void Adapter::setShootFunction(std::function<void()> func)
 	shootFunc = func;
 }
 
+void Adapter::setStartUFOFunction(std::function<void()> func)
+{
+	startUFOFunc = func;
+}
+
 void Adapter::playSoundShoot()
 {
 	if (shootFunc)
@@ -213,22 +218,30 @@ void Adapter::playSoundShoot()
 	}
 }
 
-void Adapter::setUFOFunction(std::function<void()> func)
+void Adapter::setStopUFOFunction(std::function<void()> func)
 {
-	ufoFunc = func;
-}
-
-void Adapter::playSoundUFO()
-{
-	if (ufoFunc)
-	{
-		ufoFunc();
-	}
+	stopUFOFunc = func;
 }
 
 void Adapter::setUFOHitFunction(std::function<void()> func)
 {
 	ufoHitFunc = func;
+}
+
+void Adapter::startSoundUFO()
+{
+	if (startUFOFunc)
+	{
+		startUFOFunc();
+	}
+}
+
+void Adapter::stopSoundUFO()
+{
+	if (stopUFOFunc)
+	{
+		stopUFOFunc();
+	}
 }
 
 void Adapter::playSoundUFOHit()
