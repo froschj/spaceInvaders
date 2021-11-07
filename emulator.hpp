@@ -9,7 +9,7 @@
 #include <cstdint>
 #include "memory.hpp"
 #include <ostream>
-#include <map>
+#include <array>
 #include <iostream>
 #include <string>
 #include <functional>
@@ -119,7 +119,8 @@ class Emulator8080 :
         std::function<int(void)> decode(uint8_t word);
 
         // hold opcode lookup table
-        std::map<uint8_t, std::function<int(void)>> opcodes; 
+        //std::map<uint8_t, std::function<int(void)>> opcodes; 
+        std::array<std::function<int(void)>, 0x100> opcodes;
 
         void buildMap(); // populate the lookup table
 
@@ -167,6 +168,11 @@ class Emulator8080 :
         // only one-byte instructions currently implemented
         // returns # of cpu clock cycles to handle interrupt
         int processInterrupt(std::initializer_list<uint8_t> instructionBytes);
+
+        int nop();
+        int jmp();
+        int ret();
+        int call();
      
 };
 
