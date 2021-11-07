@@ -88,33 +88,47 @@ void Machine::step()
 		return;
 	}
 
+
 	//Check platform for input
 	if (_platformAdapter->isInputChanged())
 	{
 		processInput();
 	}
 
-	if (cycleCount < maxCycles / 60.0f)
-	{
-		//Step emulator
-		cycleCount += _emulator->step();
-	}
-
 	//Check time for refresh
 	//https://www.geeksforgeeks.org/measure-execution-time-function-cpp/
 	auto checkTime = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(checkTime - _frameStartTime);
+	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(checkTime - _frameStartTime);
 		
-	if (duration.count() > 16.6) //16.6 ms in a 1/60 sec frame
+	if (duration.count() > 8333) //16666 microsec in a 1/60 sec frame, check for interrupt every half frame
 	{
 		//TODO WIP interrupt
-		if (true /*_emulator->isInterruptEnable()*/)
-		{
-			//_emulator->testInterrupt();
-			_platformAdapter->refreshScreen();
-			_frameStartTime = std::chrono::high_resolution_clock::now();
-			cycleCount = 0;
+		bool isInterruptable = _emulator->isInterruptEnable();
+		if (isInterruptable)
+		{	//0xcf RST 1, 0xd7 RST 2
+			if (useRST1)
+			{
+				_emulator->requestInterrupt(RST1); 
+			}
+			else
+			{
+				_emulator->requestInterrupt(RST2);
+			}
+			
+			useRST1 = !useRST1;
 		}
+		
+		//Catch up the CPU for the time that has passed
+		cycleCount = 0;
+		uint64_t cycles = duration.count();
+		while (cycleCount < cycles)
+		{
+			//Step emulator
+			cycleCount += _emulator->step();
+		}
+
+		_frameStartTime = std::chrono::high_resolution_clock::now();
+		_platformAdapter->refreshScreen();		
 	}
 
 }
@@ -183,9 +197,6 @@ void Machine::setP1ShootButtonBit(bool isSet)
 	if (isSet)
 	{
 		_port1 |= 0x10; //set bit 4
-
-		//TODO temp sound callback loop
-		_platformAdapter->playSoundShoot();
 	}
 	else
 	{
@@ -228,9 +239,6 @@ void Machine::setP2ShootButtonBit(bool isSet)
 	if (isSet)
 	{
 		_port2 |= 0x10; //set bit 4
-
-		//TODO temp sound callback loop
-		_platformAdapter->playSoundShoot();
 	}
 	else
 	{

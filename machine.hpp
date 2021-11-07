@@ -19,6 +19,10 @@ class Machine
 		uint8_t shiftRegisterOffset;
 		uint16_t shiftRegister;
 
+		uint8_t RST1 = 0xcf;
+		uint8_t RST2 = 0xd7;
+		bool useRST1= true;
+
 		//Timing cycle variables
 		int cycleCount;
 		const int maxCycles = 1000000;
