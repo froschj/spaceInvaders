@@ -197,9 +197,6 @@ void Machine::setP1ShootButtonBit(bool isSet)
 	if (isSet)
 	{
 		_port1 |= 0x10; //set bit 4
-
-		//TODO temp sound callback loop
-		_platformAdapter->playSoundShoot();
 	}
 	else
 	{
@@ -242,9 +239,6 @@ void Machine::setP2ShootButtonBit(bool isSet)
 	if (isSet)
 	{
 		_port2 |= 0x10; //set bit 4
-
-		//TODO temp sound callback loop
-		_platformAdapter->playSoundShoot();
 	}
 	else
 	{
