@@ -13,7 +13,8 @@ class Adapter
 		std::function<void()> fleetMove4Func;
 		std::function<void()> invaderDieFunc;
 		std::function<void()> shootFunc;
-		std::function<void()> ufoFunc;
+		std::function<void()> startUFOFunc;
+		std::function<void()> stopUFOFunc;
 		std::function<void()> ufoHitFunc;
 
 		//Visual functions
@@ -68,7 +69,8 @@ class Adapter
 		void setFleetMove4Function(std::function<void()> func);
 		void setInvaderDieFunction(std::function<void()> func);
 		void setShootFunction(std::function<void()> func);
-		void setUFOFunction(std::function<void()> func);
+		void setStartUFOFunction(std::function<void()> func);
+		void setStopUFOFunction(std::function<void()> func);
 		void setUFOHitFunction(std::function<void()> func);
 
 		//Callback functions for sounds (machine calls)
@@ -79,7 +81,9 @@ class Adapter
 		void playSoundFleetMove4();		
 		void playSoundInvaderDie();		
 		void playSoundShoot();		
-		void playSoundUFO();		
+		//void playSoundUFO(bool start);		
+		void startSoundUFO();
+		void stopSoundUFO();
 		void playSoundUFOHit();
 
 };
