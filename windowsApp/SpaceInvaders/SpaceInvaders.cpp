@@ -59,7 +59,7 @@ const int NATIVE_HEIGHT_PIXELS = 256;
 const int NATIVE_WIDTH_PIXELS = 224;
 const int BMP_BITS_PER_PIXEL = 8;
 const int DEFAULT_SCALE_FACTOR = 2;
-
+BITMAPINFO* bi;
 
 //end declares
 
@@ -81,6 +81,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	COLOR_TABLE[1] = RGBQUAD{ 0xff,0xff,0xff,0 }; // color 1, white for foreground
 	COLOR_TABLE[2] = RGBQUAD{ 0x44,0x11,0xff,0 }; // color 2, magenta for upper foreground band
 	COLOR_TABLE[3] = RGBQUAD{ 0x08,0x9d,0x13,0 }; // color 3, green for upper foreground band
+
+	bi = (BITMAPINFO*)malloc(sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
+	if (!bi) exit(EXIT_FAILURE);
+	memset(bi, 0, sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
+	bi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bi->bmiHeader.biWidth = NATIVE_WIDTH_PIXELS;
+	bi->bmiHeader.biHeight = -NATIVE_HEIGHT_PIXELS;
+	bi->bmiHeader.biPlanes = 1;
+	bi->bmiHeader.biBitCount = BMP_BITS_PER_PIXEL;
+	bi->bmiHeader.biCompression = BI_RGB;
+	bi->bmiHeader.biClrUsed = NUMBER_OF_COLORS;
+
+	for (int i = 0; i < NUMBER_OF_COLORS; ++i)
+	{
+		bi->bmiColors[i] = COLOR_TABLE[i];
+	}
 
 	//Connect machine and platform sound output
 	platformAdapter.setShootFunction(&PlaySoundShoot);
@@ -149,6 +165,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		
 	}
 	free(g_videoBuffer);
+	free(bi);
     return (int) msg.wParam;
 }
 
@@ -514,7 +531,7 @@ void DrawScreen(HWND hWnd, HDC hdc)
 		}
 		
 	}
-
+	/*
 	BITMAPINFO* bi = (BITMAPINFO*)malloc(sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
 	if (!bi) exit(EXIT_FAILURE);
 	memset(bi, 0, sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
@@ -530,7 +547,7 @@ void DrawScreen(HWND hWnd, HDC hdc)
 	{
 		bi->bmiColors[i] = COLOR_TABLE[i];
 	}
-
+	*/
 	//Get current screen size
 	RECT clientRect;
 	GetClientRect(hWnd, &clientRect);
@@ -539,7 +556,7 @@ void DrawScreen(HWND hWnd, HDC hdc)
 
 	//TODO Find the correct ratio to fit in the screen	
 	int x = StretchDIBits(hdc, 0, 0, targetWidth, targetHeight, 0, 0, NATIVE_WIDTH_PIXELS, NATIVE_HEIGHT_PIXELS, g_videoBuffer, bi, DIB_RGB_COLORS, SRCCOPY);
-	free(bi);
+	//free(bi);
 }
 
 //Reading bundled ROM file as resource instead of external file
