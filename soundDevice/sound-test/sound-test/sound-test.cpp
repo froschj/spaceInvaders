@@ -6,6 +6,7 @@
 #include "soundDevice.h"
 #include <combaseapi.h>
 #include <memory>
+#include <string>
 
 #define MAX_LOADSTRING 100
 
@@ -31,7 +32,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(lpCmdLine);
 
     // TODO: Place code here.
-	soundPlayer = std::make_unique<InvaderSoundDevice>();
+	std::string pathToSFX = "../../../sounds/";
+	soundPlayer = std::make_unique<InvaderSoundDevice>(pathToSFX);
 
     // Initialize global strings
     LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);

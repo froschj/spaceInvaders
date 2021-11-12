@@ -8,7 +8,7 @@
 
 
 
-InvaderSoundDevice::InvaderSoundDevice()
+InvaderSoundDevice::InvaderSoundDevice(std::string sfxFilePath)
 {
 	HRESULT hr;
 	hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
@@ -21,20 +21,20 @@ InvaderSoundDevice::InvaderSoundDevice()
 	masterVoice = nullptr;
 	if (FAILED(hr = engine->CreateMasteringVoice(&masterVoice)))
 		throw "failure creating mastering voice";
-	this->loadSounds();
+	this->loadSounds(sfxFilePath);
 }
 
-void InvaderSoundDevice::loadSounds()
+void InvaderSoundDevice::loadSounds(std::string sfxFilePath)
 {
 	HRESULT hr;
 	// open the sound files
 	HANDLE soundFile;
-	char filePath[] = FILE_PATH_PATTERN;
+	
 
 	for (int i = 0; i < SFX_COUNT; ++i)
 	{
-		filePath[16] = static_cast<char>(i) + '0';
-		soundFile = CreateFileA(filePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+		std::string soundFileName = sfxFilePath + std::to_string(i) + ".wav";
+		soundFile = CreateFileA(soundFileName.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 		if (soundFile == INVALID_HANDLE_VALUE)
 			throw "error opening audio file";
 		if (INVALID_SET_FILE_POINTER == SetFilePointer(soundFile, 0, NULL, FILE_BEGIN))

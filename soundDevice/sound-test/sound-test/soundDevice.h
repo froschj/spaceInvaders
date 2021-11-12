@@ -1,6 +1,7 @@
 #pragma once
 #include <xaudio2.h>
 #include <array>
+#include <string>
 #define fourccRIFF 'FFIR'
 #define fourccDATA 'atad'
 #define fourccFMT ' tmf'
@@ -8,7 +9,6 @@
 #define fourccXWMA 'AMWX'
 #define fourccDPDS 'sdpd'
 
-#define FILE_PATH_PATTERN "../../../sounds/#.wav"
 
 class InvaderSoundDevice 
 {
@@ -24,7 +24,7 @@ public:
 		FLEET_MOVE_4,
 		UFO_HIT
 	};
-	InvaderSoundDevice();
+	InvaderSoundDevice(std::string sfxFilePath);
 	~InvaderSoundDevice();
 	void playSound(InvaderSoundDevice::sfx whichSoundEffect);
 private:
@@ -33,7 +33,7 @@ private:
 	IXAudio2MasteringVoice* masterVoice;
 	std::array<IXAudio2SourceVoice*, SFX_COUNT> sourceVoices;
 	std::array<XAUDIO2_BUFFER, SFX_COUNT> buffers;
-	void loadSounds();
+	void loadSounds(std::string sfxFilePath);
 	HRESULT ReadChunkData(HANDLE hFile, void* buffer, DWORD buffersize, DWORD bufferoffset);
 	HRESULT FindChunk(HANDLE hFile, DWORD fourcc, DWORD& dwChunkSize, DWORD& dwChunkDataPosition);
 };
