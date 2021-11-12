@@ -66,6 +66,7 @@ void InvaderSoundDevice::loadSounds(std::string sfxFilePath)
 		buffers.at(i).AudioBytes = dwChunkSize;  //size of the audio buffer in bytes
 		buffers.at(i).pAudioData = pDataBuffer;  //buffer containing audio data
 		buffers.at(i).Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
+		if (i == static_cast<int>(sfx::UFO)) buffers.at(i).LoopCount = XAUDIO2_LOOP_INFINITE;
 		
 		// create source voices
 		sourceVoices.at(i) = nullptr;
@@ -84,6 +85,12 @@ void InvaderSoundDevice::playSound(InvaderSoundDevice::sfx whichSoundEffect)
 	if (FAILED(hr = sourceVoices[index]->SubmitSourceBuffer(&(buffers[index]))))
 		throw "could not submit audio source buffer";
 	sourceVoices[index]->Start(0);
+}
+
+void InvaderSoundDevice::stopSound(InvaderSoundDevice::sfx whichSoundEffect)
+{
+	int index = static_cast<int>(whichSoundEffect);
+	sourceVoices[index]->Stop();
 }
 
 InvaderSoundDevice::~InvaderSoundDevice()

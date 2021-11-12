@@ -27,6 +27,7 @@ public:
 	InvaderSoundDevice(std::string sfxFilePath);
 	~InvaderSoundDevice();
 	void playSound(InvaderSoundDevice::sfx whichSoundEffect);
+	void stopSound(InvaderSoundDevice::sfx whichSoundEffect);
 private:
 	static const int SFX_COUNT = 9;
 	IXAudio2* engine;

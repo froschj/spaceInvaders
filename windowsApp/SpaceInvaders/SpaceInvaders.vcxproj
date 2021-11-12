@@ -108,7 +108,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\cs467\cs467-capstone;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\soundDevice\sound-test\sound-test;..\..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -162,6 +162,7 @@
     <ClInclude Include="..\..\memory.hpp" />
     <ClInclude Include="..\..\platformAdapter.hpp" />
     <ClInclude Include="..\..\processor.hpp" />
+    <ClInclude Include="..\..\soundDevice\sound-test\sound-test\soundDevice.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="resource1.h" />
@@ -173,6 +174,7 @@
     <ClCompile Include="..\..\machine.cpp" />
     <ClCompile Include="..\..\memory.cpp" />
     <ClCompile Include="..\..\platformAdapter.cpp" />
+    <ClCompile Include="..\..\soundDevice\sound-test\sound-test\soundDevice.cpp" />
     <ClCompile Include="SpaceInvaders.cpp" />
   </ItemGroup>
   <ItemGroup>
