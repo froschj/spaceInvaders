@@ -8,6 +8,8 @@
 #define fourccXWMA 'AMWX'
 #define fourccDPDS 'sdpd'
 
+#define FILE_PATH_PATTERN "../../../sounds/#.wav"
+
 class InvaderSoundDevice 
 {
 public:

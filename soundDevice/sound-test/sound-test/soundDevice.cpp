@@ -29,7 +29,7 @@ void InvaderSoundDevice::loadSounds()
 	HRESULT hr;
 	// open the sound files
 	HANDLE soundFile;
-	char filePath[] = "../../../sounds/#.wav";
+	char filePath[] = FILE_PATH_PATTERN;
 
 	for (int i = 0; i < SFX_COUNT; ++i)
 	{
