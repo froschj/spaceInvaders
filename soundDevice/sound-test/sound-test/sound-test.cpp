@@ -136,8 +136,39 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 		case 0x34:
 			//4 key, sound test UFO
-			soundPlayer->playSound();
+			soundPlayer->playSound(InvaderSoundDevice::sfx::UFO);
 			break;
+		case 0x35:
+			//5 key, sound test shoot
+			soundPlayer->playSound(InvaderSoundDevice::sfx::SHOT);
+			break;
+		case 0x36:
+			//6 key, sound test player die
+			soundPlayer->playSound(InvaderSoundDevice::sfx::PLAYER_DEATH);
+			break;
+		case 0x37:
+			//7 key, sound test invader die
+			soundPlayer->playSound(InvaderSoundDevice::sfx::INVADER_DEATH);
+			break;
+		case 0x38:
+			//8 key, sound test fleet move 1
+			soundPlayer->playSound(InvaderSoundDevice::sfx::FLEET_MOVE_1);
+			break;
+		case 0x39:
+			//9 key, sound test fleet move 2
+			soundPlayer->playSound(InvaderSoundDevice::sfx::FLEET_MOVE_2);
+			break;
+		case 0x30:
+			//0 key, sound test fleet move 3
+			soundPlayer->playSound(InvaderSoundDevice::sfx::FLEET_MOVE_3);
+			break;
+		case VK_OEM_MINUS:
+			// - key, sound test fleet move 4
+			soundPlayer->playSound(InvaderSoundDevice::sfx::FLEET_MOVE_4);
+			break;
+		case VK_OEM_PLUS:
+			// + key, sound test UFO hit
+			soundPlayer->playSound(InvaderSoundDevice::sfx::UFO_HIT);
 		}
     case WM_COMMAND:
         {

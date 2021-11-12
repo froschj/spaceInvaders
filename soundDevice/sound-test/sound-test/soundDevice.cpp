@@ -27,57 +27,63 @@ InvaderSoundDevice::InvaderSoundDevice()
 void InvaderSoundDevice::loadSounds()
 {
 	HRESULT hr;
-	// open the sound file
+	// open the sound files
 	HANDLE soundFile;
-	char filePath[] = "../../../sounds/1.wav";
-	soundFile = CreateFileA(filePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-	if (soundFile == INVALID_HANDLE_VALUE)
-		throw "error opening audio file";
-	if (INVALID_SET_FILE_POINTER == SetFilePointer(soundFile, 0, NULL, FILE_BEGIN))
-		throw "error setting file pointer";
+	char filePath[] = "../../../sounds/#.wav";
 
-	// structures to populate
-	WAVEFORMATEXTENSIBLE wfx = { 0 };
-	buffer = { 0 };
+	for (int i = 0; i < SFX_COUNT; ++i)
+	{
+		filePath[16] = static_cast<char>(i) + '0';
+		soundFile = CreateFileA(filePath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+		if (soundFile == INVALID_HANDLE_VALUE)
+			throw "error opening audio file";
+		if (INVALID_SET_FILE_POINTER == SetFilePointer(soundFile, 0, NULL, FILE_BEGIN))
+			throw "error setting file pointer";
 
-	// checking RIFF chunk for file type
-	DWORD dwChunkSize;
-	DWORD dwChunkPosition;
-	//check the file type, should be fourccWAVE or 'XWMA'
-	FindChunk(soundFile, fourccRIFF, dwChunkSize, dwChunkPosition);
-	DWORD filetype;
-	ReadChunkData(soundFile, &filetype, sizeof(DWORD), dwChunkPosition);
-	if (filetype != fourccWAVE)
-		throw "bad audio file type";
+		// structures to populate
+		WAVEFORMATEXTENSIBLE wfx = { 0 };
+		buffers.at(i) = { 0 };
 
-	// copy fmt schunk int WAVEFORMATEXTENSIBLE
-	FindChunk(soundFile, fourccFMT, dwChunkSize, dwChunkPosition);
-	ReadChunkData(soundFile, &wfx, dwChunkSize, dwChunkPosition);
+		// checking RIFF chunk for file type
+		DWORD dwChunkSize;
+		DWORD dwChunkPosition;
+		//check the file type, should be fourccWAVE or 'XWMA'
+		FindChunk(soundFile, fourccRIFF, dwChunkSize, dwChunkPosition);
+		DWORD filetype;
+		ReadChunkData(soundFile, &filetype, sizeof(DWORD), dwChunkPosition);
+		if (filetype != fourccWAVE)
+			throw "bad audio file type";
 
-	//fill out the audio data buffer with the contents of the fourccDATA chunk
-	FindChunk(soundFile, fourccDATA, dwChunkSize, dwChunkPosition);
-	BYTE* pDataBuffer = new BYTE[dwChunkSize];
-	ReadChunkData(soundFile, pDataBuffer, dwChunkSize, dwChunkPosition);
+		// copy fmt schunk int WAVEFORMATEXTENSIBLE
+		FindChunk(soundFile, fourccFMT, dwChunkSize, dwChunkPosition);
+		ReadChunkData(soundFile, &wfx, dwChunkSize, dwChunkPosition);
 
-	buffer.AudioBytes = dwChunkSize;  //size of the audio buffer in bytes
-	buffer.pAudioData = pDataBuffer;  //buffer containing audio data
-	buffer.Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
+		//fill out the audio data buffer with the contents of the fourccDATA chunk
+		FindChunk(soundFile, fourccDATA, dwChunkSize, dwChunkPosition);
+		BYTE* pDataBuffer = new BYTE[dwChunkSize];
+		ReadChunkData(soundFile, pDataBuffer, dwChunkSize, dwChunkPosition);
 
-	// create source voice
-	sourceVoice = nullptr;
-	if (FAILED(hr = engine->CreateSourceVoice(&sourceVoice, (WAVEFORMATEX*)& wfx)))
-		throw "could not create source voice";
-	if (FAILED(hr = sourceVoice->SubmitSourceBuffer(&buffer)))
-		throw "could not submit audio source buffer";
+		buffers.at(i).AudioBytes = dwChunkSize;  //size of the audio buffer in bytes
+		buffers.at(i).pAudioData = pDataBuffer;  //buffer containing audio data
+		buffers.at(i).Flags = XAUDIO2_END_OF_STREAM; // tell the source voice not to expect any data after this buffer
+		
+		// create source voices
+		sourceVoices.at(i) = nullptr;
+		if (FAILED(hr = engine->CreateSourceVoice(&(sourceVoices.at(i)), (WAVEFORMATEX*)& wfx)))
+			throw "could not create source voice";
+		CloseHandle(soundFile);
+	}
+
 }
 
-void InvaderSoundDevice::playSound()
+void InvaderSoundDevice::playSound(InvaderSoundDevice::sfx whichSoundEffect)
 {
-	sourceVoice->Stop();
+	int index = static_cast<int>(whichSoundEffect);
+	sourceVoices[index]->Stop();
 	HRESULT hr;
-	if (FAILED(hr = sourceVoice->SubmitSourceBuffer(&buffer)))
+	if (FAILED(hr = sourceVoices[index]->SubmitSourceBuffer(&(buffers[index]))))
 		throw "could not submit audio source buffer";
-	sourceVoice->Start(0);
+	sourceVoices[index]->Start(0);
 }
 
 InvaderSoundDevice::~InvaderSoundDevice()
