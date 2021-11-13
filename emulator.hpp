@@ -214,7 +214,7 @@ class Emulator8080 :
 
 /*
  * A meaningful exception to throw if the "processor" encounters an
- * unknown or unimplemented opcode
+ * interrupt that cannot be processed
  */
 class UnimplementedInterruptError : public std::exception {
     private:

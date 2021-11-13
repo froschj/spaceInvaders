@@ -51,6 +51,7 @@ Emulator8080::~Emulator8080() {
 }
 
 // set the processor to a certain memory address for execution
+// this will set the next instruction to be executed
 void Emulator8080::reset(uint16_t address) {
     this->state.pc = address;
 }
@@ -81,6 +82,7 @@ uint8_t Emulator8080::fetch(uint16_t address) {
 }
 
 // obtain host machine code corresponding to an opcode
+// returns a callable that will emulate an 8080 instruction
 std::function<int(void)> Emulator8080::decode(uint8_t word) {
     try {
         return opcodes.at(word);
@@ -101,11 +103,14 @@ std::function<int(void)> Emulator8080::decode(uint8_t word) {
     }
 }
 
+
+// No OPeration, called from opcode lambdas
 int Emulator8080::nop() {
-    ++this->state.pc; // do nothin but advance pc
+    ++this->state.pc; // do nothing, but advance pc
     return 4;
 }
 
+// JuMP, set the next instruction based on memory. called from opcode lambdas
 int Emulator8080::jmp() {
     uint16_t jumpAddress = 
         this->readAddressFromMemory(this->state.pc + 1); 
@@ -113,6 +118,8 @@ int Emulator8080::jmp() {
     return 10; 
 }
 
+// RETurn, recume excecution from stored address after a CALL is done.
+// called from opcode lambdas
 int Emulator8080::ret() {
     uint16_t jumpAddress = this->readAddressFromMemory(this->state.sp);
     this->state.sp += 2; 
@@ -120,12 +127,16 @@ int Emulator8080::ret() {
     return 10; 
 }
 
+// CALL, save a return address and move to a new point of execution
+// caled from opcode lambdas
 int Emulator8080::call() {
     // read destination address do call actions
     this->callAddress(this->readAddressFromMemory(this->state.pc + 1));
     return 17; 
 }
 
+// create an array as an opcode lookup table. Associates a lambda function
+// with each 8080 opcode
 void Emulator8080::buildMap() {
     // NOP (0x00): 
     // 4 cycles, 1 byte
@@ -2733,6 +2744,7 @@ void Emulator8080::buildMap() {
 }
 
 // read an address stored starting at atAddress
+// accounts for little-endian storage model
 uint16_t Emulator8080::readAddressFromMemory(uint16_t atAddress) {
     uint16_t lsb = this->memory->read(atAddress);
     uint16_t msb = this->memory->read(atAddress + 1) << 8;
@@ -2740,8 +2752,11 @@ uint16_t Emulator8080::readAddressFromMemory(uint16_t atAddress) {
 }
 
 // set up return address on stack and set jump address
+// pushes the current address on the stack, then sets the program counter to
+// an argument, address. isReset governs which address is pushed->
+// false, pc = next instruction; true, pc = current instruction
 void Emulator8080::callAddress(uint16_t address, bool isReset) {
-    // advance pc to next instruction
+    // advance pc to next instruction if this is not a RST
     if (!isReset) {
         this->state.pc += 3;
     }
@@ -2782,7 +2797,7 @@ uint16_t Emulator8080::getHL() {
     return msb + lsb;
 }
 
-// determine state of Z flag
+// determine state of Z[ero] flag
 void Emulator8080::updateZeroFlag(uint8_t value) {
     if ( value == 0x00 ) { // compare to zero
         this->state.setFlag(State8080::Z);
@@ -2791,7 +2806,7 @@ void Emulator8080::updateZeroFlag(uint8_t value) {
     }
 }
 
-// determine state of S flag
+// determine state of S[ign] flag
 void Emulator8080::updateSignFlag(uint8_t value) {
     if ( value & 0x80 ) { // 0b1000'0000
         this->state.setFlag(State8080::S);
@@ -2800,9 +2815,9 @@ void Emulator8080::updateSignFlag(uint8_t value) {
     }
 }
 
-// determine state of S flag
+// determine state of P[arity] flag
 void Emulator8080::updateParityFlag(uint8_t value) {
-    // https://www.freecodecamp.org/news/algorithmic-problem-solving-efficiently-computing-the-parity-of-a-stream-of-numbers-cd652af14643/
+    // parity algorithm: https://www.freecodecamp.org/news/algorithmic-problem-solving-efficiently-computing-the-parity-of-a-stream-of-numbers-cd652af14643/
     value ^= value >> 4;
     value ^= value >> 2;
     value ^= value >> 1;
@@ -2858,7 +2873,8 @@ uint8_t Emulator8080::subtractValues(
     uint8_t carryBit = 0;
     if (withCarry && this->state.isFlag(State8080::CY)) carryBit = 1;
 
-    //check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
+    // check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
+    // do operation on low nibble, see if something propagated to the high
     if (((minuend & 0x0f) - (subtrahend & 0x0f) - carryBit) & 0xf0) {
         this->state.setFlag(State8080::AC);
     } else {
@@ -2885,7 +2901,6 @@ uint8_t Emulator8080::subtractValues(
 
     return difference;
 }
-
 
 // add a 2-byte addend to HL and store the result in HL
 // set the CY flag if necessary
@@ -3001,6 +3016,7 @@ int Emulator8080::processInterrupt(
         auto interruptFunction = this->decode(interruptBytes.at(0));
         this->enableInterrupts = false;
         return interruptFunction();
+    //in the future, we can add multi-byte support here
     } else {
         // handle bad instruction bytes
         std::stringstream badOpcode;
@@ -3015,6 +3031,7 @@ int Emulator8080::processInterrupt(
 // request an interrupt. Accepts a one-byte 8080 opcode
 // returns the number of CPU clock cycles to process the interrupt
 int Emulator8080::requestInterrupt(uint8_t opcode) {
+    // filter so we only allow 1-byte instructions
     if (
         ((opcode >= 0x3f) && (opcode <= 0xc1))
         || (((0xf & opcode) == 0x0) && ((opcode == 0x00) || (opcode > 0x3f)))
