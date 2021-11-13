@@ -54,8 +54,12 @@ bool g_screenNeedsRefresh;
 HWND g_hWndGameWindow;
 
 const int NUMBER_OF_COLORS = 4;
-
 RGBQUAD COLOR_TABLE[NUMBER_OF_COLORS];
+const int NATIVE_HEIGHT_PIXELS = 256;
+const int NATIVE_WIDTH_PIXELS = 224;
+const int BMP_BITS_PER_PIXEL = 8;
+const int DEFAULT_SCALE_FACTOR = 2;
+BITMAPINFO* bi;
 
 //end declares
 
@@ -70,13 +74,29 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     //** Configure machine and emulator **
 
 	//Create gui app video buffer
-	int screenPixelBufferSize = 256 * 224; //57344 total pixels
+	int screenPixelBufferSize = NATIVE_HEIGHT_PIXELS * NATIVE_WIDTH_PIXELS; //57344 total pixels
 	g_videoBuffer = reinterpret_cast<uint8_t*>(std::malloc(screenPixelBufferSize * sizeof(uint8_t)));
 
 	COLOR_TABLE[0] = RGBQUAD{ 0x00,0x00,0x00,0 }; // color 0, black for background
 	COLOR_TABLE[1] = RGBQUAD{ 0xff,0xff,0xff,0 }; // color 1, white for foreground
 	COLOR_TABLE[2] = RGBQUAD{ 0x44,0x11,0xff,0 }; // color 2, magenta for upper foreground band
 	COLOR_TABLE[3] = RGBQUAD{ 0x08,0x9d,0x13,0 }; // color 3, green for upper foreground band
+
+	bi = (BITMAPINFO*)malloc(sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
+	if (!bi) exit(EXIT_FAILURE);
+	memset(bi, 0, sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
+	bi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bi->bmiHeader.biWidth = NATIVE_WIDTH_PIXELS;
+	bi->bmiHeader.biHeight = -NATIVE_HEIGHT_PIXELS;
+	bi->bmiHeader.biPlanes = 1;
+	bi->bmiHeader.biBitCount = BMP_BITS_PER_PIXEL;
+	bi->bmiHeader.biCompression = BI_RGB;
+	bi->bmiHeader.biClrUsed = NUMBER_OF_COLORS;
+
+	for (int i = 0; i < NUMBER_OF_COLORS; ++i)
+	{
+		bi->bmiColors[i] = COLOR_TABLE[i];
+	}
 
 	//Connect machine and platform sound output
 	platformAdapter.setShootFunction(&PlaySoundShoot);
@@ -145,6 +165,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		
 	}
 	free(g_videoBuffer);
+	free(bi);
     return (int) msg.wParam;
 }
 
@@ -191,7 +212,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    //Space Invaders screen: 256x224 pixels
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-	   CW_USEDEFAULT, 0, 224 * 4, 256 * 4, nullptr, nullptr, hInstance, nullptr);
+	   CW_USEDEFAULT, 0, NATIVE_WIDTH_PIXELS * DEFAULT_SCALE_FACTOR, NATIVE_HEIGHT_PIXELS * DEFAULT_SCALE_FACTOR, nullptr, nullptr, hInstance, nullptr);
 
 	
    if (!hWnd)
@@ -460,17 +481,17 @@ void DrawScreen(HWND hWnd, HDC hdc)
 {
 	//Space Invaders screen: 256x224 pixels
 	//Each byte in the g_videoBuffer is a pixel to make it easy to rotate
-	int height = 256;
-	int width = 224;
-	int byteSize = 1; //Each pixel is 8 bits
-	int bitCount = byteSize * 8; // could be 8, 16, 24, 32, 64 bits per color, only 0/1 from game
-	int totalSize = height * width * byteSize;  // 57,344 total pixels
+	int height = NATIVE_HEIGHT_PIXELS;
+	int width = NATIVE_WIDTH_PIXELS;
+	//int byteSize = 1; //Each pixel is 8 bits
+	//int bitCount = byteSize * 8; // could be 8, 16, 24, 32, 64 bits per color, only 0/1 from game
+	//int totalSize = height * width * byteSize;  // 57,344 total pixels
 
 	//Iterate over each byte of of memory and put bits into video buffer
 	//int bufferIndex = 0; //Used for testing drawing raw data (rotated clockwise)
 	
-	int rowWidth = 224;
-	int rowIndex = 255;
+	int rowWidth = NATIVE_WIDTH_PIXELS;
+	int rowIndex = NATIVE_HEIGHT_PIXELS - 1; //reduce by 1 for 0-indexing
 	int columnIndex = 0;
 	for (int i = 0x2400; i < 0x4000; ++i)
 	{
@@ -505,20 +526,20 @@ void DrawScreen(HWND hWnd, HDC hdc)
 
 		if (rowIndex < 0)
 		{
-			rowIndex = 255;
+			rowIndex = NATIVE_HEIGHT_PIXELS - 1; //reduce by 1 for 0-indexing
 			columnIndex += 1;
 		}
 		
 	}
-
+	/*
 	BITMAPINFO* bi = (BITMAPINFO*)malloc(sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
 	if (!bi) exit(EXIT_FAILURE);
 	memset(bi, 0, sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
 	bi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bi->bmiHeader.biWidth = width;
-	bi->bmiHeader.biHeight = -height;
+	bi->bmiHeader.biWidth = NATIVE_WIDTH_PIXELS;
+	bi->bmiHeader.biHeight = -NATIVE_HEIGHT_PIXELS;
 	bi->bmiHeader.biPlanes = 1;
-	bi->bmiHeader.biBitCount = bitCount;
+	bi->bmiHeader.biBitCount = BMP_BITS_PER_PIXEL;
 	bi->bmiHeader.biCompression = BI_RGB;
 	bi->bmiHeader.biClrUsed = NUMBER_OF_COLORS;
 
@@ -526,7 +547,7 @@ void DrawScreen(HWND hWnd, HDC hdc)
 	{
 		bi->bmiColors[i] = COLOR_TABLE[i];
 	}
-
+	*/
 	//Get current screen size
 	RECT clientRect;
 	GetClientRect(hWnd, &clientRect);
@@ -534,8 +555,8 @@ void DrawScreen(HWND hWnd, HDC hdc)
 	int targetHeight = clientRect.bottom - clientRect.top;
 
 	//TODO Find the correct ratio to fit in the screen	
-	int x = StretchDIBits(hdc, 0, 0, targetWidth, targetHeight, 0, 0, width, height, g_videoBuffer, bi, DIB_RGB_COLORS, SRCCOPY);
-	free(bi);
+	int x = StretchDIBits(hdc, 0, 0, targetWidth, targetHeight, 0, 0, NATIVE_WIDTH_PIXELS, NATIVE_HEIGHT_PIXELS, g_videoBuffer, bi, DIB_RGB_COLORS, SRCCOPY);
+	//free(bi);
 }
 
 //Reading bundled ROM file as resource instead of external file
