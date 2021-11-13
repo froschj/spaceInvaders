@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{2A9DC353-881D-4009-893A-E16051CE6F6D}</ProjectGuid>
+    <ProjectGuid>{42E3F445-E8F6-4578-9712-332AF819DA7C}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>SpaceInvaders</RootNamespace>
+    <RootNamespace>soundtest</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -91,12 +91,10 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -108,12 +106,10 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\..\soundDevice\sound-test\sound-test;..\..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -127,14 +123,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>../../;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -157,47 +151,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\emulator.hpp" />
-    <ClInclude Include="..\..\machine.hpp" />
-    <ClInclude Include="..\..\memory.hpp" />
-    <ClInclude Include="..\..\platformAdapter.hpp" />
-    <ClInclude Include="..\..\processor.hpp" />
-    <ClInclude Include="..\..\soundDevice\sound-test\sound-test\soundDevice.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="resource1.h" />
-    <ClInclude Include="SpaceInvaders.h" />
+    <ClInclude Include="sound-test.h" />
+    <ClInclude Include="soundDevice.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\emulator.cpp" />
-    <ClCompile Include="..\..\machine.cpp" />
-    <ClCompile Include="..\..\memory.cpp" />
-    <ClCompile Include="..\..\platformAdapter.cpp" />
-    <ClCompile Include="..\..\soundDevice\sound-test\sound-test\soundDevice.cpp" />
-    <ClCompile Include="SpaceInvaders.cpp" />
+    <ClCompile Include="sound-test.cpp" />
+    <ClCompile Include="soundDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="SpaceInvaders.rc" />
+    <ResourceCompile Include="sound-test.rc" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="small.ico" />
-    <Image Include="SpaceInvaders.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Media Include="0.wav" />
-    <Media Include="1.wav" />
-    <Media Include="2.wav" />
-    <Media Include="3.wav" />
-    <Media Include="4.wav" />
-    <Media Include="5.wav" />
-    <Media Include="6.wav" />
-    <Media Include="7.wav" />
-    <Media Include="8.wav" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\roms\invaders\invaders" />
-    <None Include="rcdata1.bin" />
+    <Image Include="sound-test.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

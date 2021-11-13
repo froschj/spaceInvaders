@@ -11,7 +11,7 @@
 #include <vector>
 #include <fstream>
 #include <memory>
-
+#include "soundDevice.h"
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -27,16 +27,16 @@ INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 //SpaceInvaders variables and forward declares
 //void PlaySoundResource(int lpResourceName, bool looping);
-void PlaySoundPlayerDie();
-void PlaySoundFleetMove1();
-void PlaySoundFleetMove2();
-void PlaySoundFleetMove3();
-void PlaySoundFleetMove4();
-void PlaySoundInvaderDie();
-void PlaySoundShoot();
-void StartSoundUFO();
-void StopSoundUFO();
-void PlaySoundUFOHit();
+//void PlaySoundPlayerDie();
+//void PlaySoundFleetMove1();
+//void PlaySoundFleetMove2();
+//void PlaySoundFleetMove3();
+//void PlaySoundFleetMove4();
+//void PlaySoundInvaderDie();
+//void PlaySoundShoot();
+//void StartSoundUFO();
+//void StopSoundUFO();
+//void PlaySoundUFOHit();
 
 void DrawScreen(HWND hWnd, HDC hdc);
 void LoadROMIntoMemory();
@@ -60,6 +60,8 @@ const int NATIVE_WIDTH_PIXELS = 224;
 const int BMP_BITS_PER_PIXEL = 8;
 const int DEFAULT_SCALE_FACTOR = 2;
 BITMAPINFO* bi;
+
+std::unique_ptr<InvaderSoundDevice> soundPlayer;
 
 //end declares
 
@@ -99,7 +101,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	//Connect machine and platform sound output
-	platformAdapter.setShootFunction(&PlaySoundShoot);
+	/*platformAdapter.setShootFunction(&PlaySoundShoot);
 	platformAdapter.setPlayerDieSoundFunction(&PlaySoundPlayerDie);
 	platformAdapter.setInvaderDieFunction(&PlaySoundInvaderDie);
 	platformAdapter.setStartUFOFunction(&StartSoundUFO);
@@ -108,8 +110,19 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	platformAdapter.setFleetMove1Function(&PlaySoundFleetMove1);
 	platformAdapter.setFleetMove2Function(&PlaySoundFleetMove2);
 	platformAdapter.setFleetMove3Function(&PlaySoundFleetMove3);
-	platformAdapter.setFleetMove4Function(&PlaySoundFleetMove4);
-	
+	platformAdapter.setFleetMove4Function(&PlaySoundFleetMove4);*/
+	soundPlayer = std::make_unique<InvaderSoundDevice>("..\\..\\sounds\\");
+	platformAdapter.setShootFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::SHOT); });
+	platformAdapter.setPlayerDieSoundFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::PLAYER_DEATH); });
+	platformAdapter.setInvaderDieFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::INVADER_DEATH); });
+	platformAdapter.setStartUFOFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::UFO); });
+	platformAdapter.setStopUFOFunction([]() {soundPlayer->stopSound(InvaderSoundDevice::sfx::UFO);} );
+	platformAdapter.setUFOHitFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::UFO_HIT); });
+	platformAdapter.setFleetMove1Function([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::FLEET_MOVE_1); });
+	platformAdapter.setFleetMove2Function([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::FLEET_MOVE_2); });
+	platformAdapter.setFleetMove3Function([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::FLEET_MOVE_3); });
+	platformAdapter.setFleetMove4Function([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::FLEET_MOVE_4); });
+
 	//Screen refresh indicator
 	platformAdapter.setRefreshScreenFunction(RefreshScreen);
 
@@ -245,14 +258,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE:
 		{	
 			//Open sound files with aliases
-			mciSendString(_T("open 1.wav alias shoot"), NULL, 0, 0);
+			/*mciSendString(_T("open 1.wav alias shoot"), NULL, 0, 0);
 			mciSendString(_T("open 2.wav alias playerDie"), NULL, 0, 0);
 			mciSendString(_T("open 4.wav alias fleetMove1"), NULL, 0, 0);
 			mciSendString(_T("open 5.wav alias fleetMove2"), NULL, 0, 0);
 			mciSendString(_T("open 6.wav alias fleetMove3"), NULL, 0, 0);
 			mciSendString(_T("open 7.wav alias fleetMove4"), NULL, 0, 0);
 			mciSendString(_T("open 3.wav alias invaderDie"), NULL, 0, 0);
-			mciSendString(_T("open 8.wav alias ufoHit"), NULL, 0, 0);
+			mciSendString(_T("open 8.wav alias ufoHit"), NULL, 0, 0);*/
 		}
 		break;
     case WM_COMMAND:
@@ -621,7 +634,7 @@ void PlaySoundResource(int lpResourceName, bool looping=false)
 	FreeResource(hRes);
 }
 */
-
+/*
 void PlaySoundPlayerDie()
 {
 	//PlaySoundResource(IDR_PLAYER_DIE);
@@ -679,7 +692,7 @@ void PlaySoundUFOHit()
 	//PlaySoundResource(IDR_UFO_HIT);
 	mciSendString(_T("play ufoHit from 0"), NULL, 0, 0);
 }
-
+*/
 void RefreshScreen()
 {
 	InvalidateRect(g_hWndGameWindow, 0, 0);
