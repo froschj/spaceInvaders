@@ -150,6 +150,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.at(0x01) = 
         [this](){
+            // load an immediate value from program memory to BC
             this->state.b = this->memory->read(this->state.pc + 2);
             this->state.c = this->memory->read(this->state.pc + 1); 
             this->state.pc += 3;
@@ -160,6 +161,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.at(0x02) =  
         [this](){ 
+            // store accumulator value in memory address stored in BC
             this->memory->write(this->state.a, this->getBC());
             ++this->state.pc;
             return 7; 
@@ -169,6 +171,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.at(0x03) =  
         [this](){
+            // increment 16-bit value in BC
             uint16_t temp = this->getBC();
             ++temp;
             this->state.b = static_cast<uint8_t>((temp & 0xff00) >> 8);
@@ -181,7 +184,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, AC
     opcodes.at(0x04) =  
         [this](){
-            // increments and sets flags
+            // increment value in B register and sets flags
             this->state.b = this->incrementValue(this->state.b);
             ++this->state.pc;
             return 5;
@@ -201,6 +204,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.at(0x06) = 
         [this](){ 
+            // load an immediate byte into B
             this->state.b = this->memory->read(this->state.pc + 1);
             this->state.pc +=2;
             return 7; 
@@ -209,22 +213,21 @@ void Emulator8080::buildMap() {
     // 4 cycles, 1 byte
     // CY
     opcodes.at(0x07) = 
-        [this](){ 
-            //std::cout << std::hex << this->state.a << std::endl;
-            //std::cout << this->state.isFlag(State8080::CY) << std::endl;
+        [this](){
+            // Rotate accumulator left 
             uint16_t shiftRegister = static_cast<uint16_t>(this->state.a);
             shiftRegister = shiftRegister << 1;
             if (shiftRegister & 0x0100) {
+                // set bit 0 and the carry flag based on bit 8
                 this->state.setFlag(State8080::CY);
                 ++shiftRegister;
             } else {
                 this->state.unSetFlag(State8080::CY);
             }
+            // mask off the high byte
             shiftRegister &= 0x00ff;
             
-            this->state.a = static_cast<uint8_t>(shiftRegister);
-            //std::cout << std::hex <<this->state.a << std::endl;
-            //std::cout << this->state.isFlag(State8080::CY) << std::endl;            
+            this->state.a = static_cast<uint8_t>(shiftRegister);           
             ++this->state.pc;
             return 4; 
         };

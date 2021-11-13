@@ -63,7 +63,7 @@ struct State8080 : State {
             0b0000'0001     // CY
         };
 
-        // bit [2] is always 0; bit [6] is always 1
+        // bit [5] is always 0; bit [1] is always 1
         uint8_t flagsRegister = 0b0000'0010;
     public:
         // meaningful names to work with flags
@@ -92,7 +92,7 @@ struct State8080 : State {
         void        loadFlags(uint8_t flagByte) {
             flagsRegister = flagByte;
             // make sure constant bits are correct
-            // bit [2] is always 0; bit [6] is always 1
+            // bit [5] is always 0; bit [1] is always 1
             flagsRegister &= 0b1101'0111;
             flagsRegister |= 0b0000'0010;
         }
