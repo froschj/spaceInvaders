@@ -9,8 +9,6 @@
 #include "emulator.hpp"
 #include <stdexcept>
 
-
-
 // Build an Emulator8080 with no memory attached
 Emulator8080::Emulator8080() {
     this->memory = nullptr;
@@ -230,7 +228,7 @@ void Emulator8080::buildMap() {
             } else {
                 this->state.unSetFlag(State8080::CY);
             }
-            // mask off the high byte
+            // mask off the high bytes
             shiftRegister &= 0x00ff;
             
             this->state.a = static_cast<uint8_t>(shiftRegister);           
@@ -565,44 +563,43 @@ void Emulator8080::buildMap() {
     // 4 cycles, 1 byte
     // Z, S, P, AC, CY
     opcodes.at(0x27) = 
-        [this](){ 
+        [this](){
+			// capture the nibbles independently
             uint8_t lowNibble = this->state.a & 0x0f;
-            // add 6 to the low nibble if it is more than 9
-            // or if the AC flag is set
-            // set the AC flag based on this action
-            if (
-                (lowNibble > 0x09)
-                || this->state.isFlag(State8080::AC)
-            ) {
-                lowNibble += 0x06;
-                if (lowNibble & 0x10) {
-                    this->state.setFlag(State8080::AC);
-                } else {
-                    this->state.unSetFlag(State8080::AC);
-                }
-            }
-            lowNibble &= 0x0f;
-            uint8_t highNibble = (this->state.a & 0xf0) >> 4;
-            if (this->state.isFlag(State8080::AC)) ++highNibble;
-            // add 6 to the high nibble if it is more than 9
-            // or if the CY flag is set
-            // set the CY flag based on the outcome
-            if (
-                (highNibble > 0x09)
-                || this->state.isFlag(State8080::CY)
-            ) {
-                highNibble += 0x06;
-                if (highNibble & 0x10) {
-                    this->state.setFlag(State8080::CY);
-                } else {
-                    this->state.unSetFlag(State8080::CY);
-                }
-            }
-            highNibble = (highNibble & 0x0f) << 4;
-            this->state.a = highNibble + lowNibble;
-			this->updateZeroFlag(this->state.a);
-			this->updateSignFlag(this->state.a);
-			this->updateParityFlag(this->state.a);
+			uint8_t highNibble = this->state.a & 0xf0;
+
+			// initialize the adjustment to be applied to convert to BCD
+			uint8_t adjustment = 0x00;
+			bool carry = false;
+
+			// determine low byte of adjustment
+			// add 6 to low nibble on Auxiliary Carry or if too big for 
+			// a decimal digit
+			if ((lowNibble > 0x09) || this->state.isFlag(State8080::AC)) {
+				adjustment |= 0x06;
+			}
+
+			// determine high byte of adjustment
+			// add 6 to high nibble on Carry, or if the high nibble will be 
+			// too large for a decimal digit
+			if (
+				(highNibble > 0x90)
+				|| ((highNibble == 0x90) && (lowNibble > 0x09))
+				|| this->state.isFlag(State8080::CY)
+			) {
+				adjustment |= 0x60;
+				// flag to manually set carry flag later, result of add
+				// may not capture in some cases
+				carry = true;
+			}
+
+			// adjust to BCD
+			this->state.a = this->addWithAccumulator(adjustment);
+
+			// adjust the carry flag if needed
+			if (carry) this->state.setFlag(State8080::CY);
+			
+			// increment pc and return cycles
             ++this->state.pc;
             return 4; 
         };
@@ -763,7 +760,7 @@ void Emulator8080::buildMap() {
     // 4 cycles, 1 byte
     // CY
     opcodes.at(0x37) =  
-        [this](){ 
+        [this](){
             this->state.setFlag(State8080::CY);
             ++this->state.pc;
             return 4; 
