@@ -2854,13 +2854,15 @@ void Emulator8080::updateParityFlag(uint8_t value) {
 
 // decrement a value, set Z S P AC flags
 uint8_t Emulator8080::decrementValue(uint8_t value) {
-    //check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
-    if (!(((value & 0x0f) - 1) > 0x0f)) {
-        this->state.setFlag(State8080::AC);
-    } else {
-        this->state.unSetFlag(State8080::AC);
-    }
-
+	// AC flag set based on low nibble add, (-1) is 0b1111 2's complement
+	// therefore AC will be set (carry out of low nibble) unless low nibble
+	// of operand is 0b0000
+	if ((value & 0x0f) != 0x00) {
+		this->state.setFlag(State8080::AC);
+	}
+	else {
+		this->state.unSetFlag(State8080::AC);
+	}
     --value; 
     // set flags based on result of operation
     this->updateZeroFlag(value);
@@ -2871,14 +2873,15 @@ uint8_t Emulator8080::decrementValue(uint8_t value) {
     return value; // return the decremented value
 }
 
-// decrement a value, set Z S P AC flags
+// increment a value, set Z S P AC flags
 uint8_t Emulator8080::incrementValue(uint8_t value) {
-    //check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
-    if (((value & 0x0f) + 1) > 0x0f) {
-        this->state.setFlag(State8080::AC);
-    } else {
-        this->state.unSetFlag(State8080::AC);
-    }
+    // only operand low nibble of 0b1111 will result in carry out from low nibble
+	// from adding 0b0001
+	if ((value & 0x0f) == 0x0f) {
+		this->state.setFlag(State8080::AC);
+	} else {
+		this->state.unSetFlag(State8080::AC);
+	}
     ++value; 
     // set flags based on result of operation
     this->updateZeroFlag(value);
