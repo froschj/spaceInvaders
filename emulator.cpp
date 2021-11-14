@@ -19,6 +19,7 @@ Emulator8080::Emulator8080() {
     this->enableInterrupts = false;
     this->outputCallback = nullptr;
     this->inputCallback = nullptr;
+    this->halted = false;
 }
 
 // Build an emulator with attached memory device
@@ -29,6 +30,7 @@ Emulator8080::Emulator8080(Memory *memoryDevice) {
     this->enableInterrupts = false;
     this->outputCallback = nullptr;
     this->inputCallback = nullptr;
+    this->halted = false;
 }
 
 // connect a callback for the OUT instruction
@@ -58,12 +60,16 @@ void Emulator8080::reset(uint16_t address) {
 
 // fetch, decode, and execute a single instruction
 int Emulator8080::step() {
-    // fetch
-    uint8_t opcodeWord = fetch(state.pc);
-    // decode
-    auto opcodeFunction = decode(opcodeWord);
-    // execute
-    return opcodeFunction();
+    if (!halted) {
+        // fetch
+        uint8_t opcodeWord = fetch(state.pc);
+        // decode
+        auto opcodeFunction = decode(opcodeWord);
+        // execute
+        return opcodeFunction();
+    } else {
+        return 0;
+    }
 }
 
 // read an opcode in from memory
@@ -302,10 +308,15 @@ void Emulator8080::buildMap() {
     // CY
     opcodes.at(0x0f) = 
         [this](){
+            // rotate accumulator right
+            // store the low bit to wrap it arround
             uint8_t carry = this->state.a & 0x01;
             this->state.a = (this->state.a & 0xfe) >> 1;
+            // wrap the low bit arround
             carry = carry << 7;
             this->state.a += carry;
+
+            // determine the state of the C[arr]Y flag
             if (this->state.a & 0x80) {
                 this->state.setFlag(State8080::CY);
             } else {
@@ -384,6 +395,8 @@ void Emulator8080::buildMap() {
     // CY
     opcodes.at(0x17) =  
         [this](){ 
+            // rotate accumulator left through carry
+            // treat accumulator and C[arr]Y bit like a 9-bit value
             uint16_t shiftRegister = static_cast<uint16_t>(this->state.a);
             shiftRegister = shiftRegister << 1;
             if (this->state.isFlag(State8080::CY)) ++shiftRegister;
@@ -467,6 +480,8 @@ void Emulator8080::buildMap() {
     // CY
     opcodes.at(0x1f) =  
         [this](){
+            // rotate accumulator right through carry
+            // treat accumulator and C[arr]Y bit like a 9-bit value
             uint8_t carry = this->state.a & 0x01;
             this->state.a = (this->state.a & 0xfe) >> 1;
             if (this->state.isFlag(State8080::CY)) this->state.a += 0x80;
@@ -1308,11 +1323,14 @@ void Emulator8080::buildMap() {
             ++this->state.pc;
             return 7; 
         }; 
-	// HLT (0x76) not implemented - do nothing
+	// HLT (0x76) special
+    // 7 cycles, 1 byte
+    // no flags
 	opcodes.at(0x76) = 
 		[this]() {
-			throw std::out_of_range("HLT");
-            return 0;
+            this->halted = true;
+            ++ this->state.pc;
+            return 7;
         };
     // MOV M,A (0x77) (HL) <- A:
     // 7 cycles, 1 byte
@@ -1930,7 +1948,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xb8) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.b //subtrahend
@@ -1943,7 +1961,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xb9) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.c //subtrahend
@@ -1956,7 +1974,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xba) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.d //subtrahend
@@ -1969,7 +1987,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xbb) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.e //subtrahend
@@ -1982,7 +2000,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xbc) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.h //subtrahend
@@ -1995,7 +2013,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xbd) = 
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.l //subtrahend
@@ -2008,7 +2026,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xbe) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->memory->read(this->getHL()) //subtrahend
@@ -2021,7 +2039,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xbf) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.a //subtrahend
@@ -3014,6 +3032,9 @@ int Emulator8080::processInterrupt(
 ) {
     if (!(this->enableInterrupts)) return 0;
     std::vector<uint8_t> interruptBytes = instructionBytes;
+
+    // interrupts clear the halt state
+    this->halted = false;
 
     if (interruptBytes.size() == 1) {
         auto interruptFunction = this->decode(interruptBytes.at(0));

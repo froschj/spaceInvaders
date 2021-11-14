@@ -197,7 +197,10 @@ class Emulator8080 :
 
         // encapusulate call procedures
         void callAddress(uint16_t address, bool isReset = false);
+
+        // processor status
         bool enableInterrupts;
+        bool halted;
 
         // trigger an interrupt
         // accepts an initializer list of bytes representing an 8080 instruction
