@@ -984,12 +984,12 @@ void Emulator8080::buildMap() {
             ++this->state.pc;
             return 5; 
         };
-    // MOV D,C (0x50) D <- C:
+    // MOV D,B (0x50) D <- B:
     // 5 cycles, 1 byte
     // no flags
     opcodes.at(0x50) =  
         [this](){
-            this->state.d = this->state.c;
+            this->state.d = this->state.b;
             ++this->state.pc;
             return 5; 
         };
