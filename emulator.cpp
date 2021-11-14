@@ -600,6 +600,9 @@ void Emulator8080::buildMap() {
             }
             highNibble = (highNibble & 0x0f) << 4;
             this->state.a = highNibble + lowNibble;
+			this->updateZeroFlag(this->state.a);
+			this->updateSignFlag(this->state.a);
+			this->updateParityFlag(this->state.a);
             ++this->state.pc;
             return 4; 
         };
@@ -2852,18 +2855,19 @@ void Emulator8080::updateParityFlag(uint8_t value) {
 // decrement a value, set Z S P AC flags
 uint8_t Emulator8080::decrementValue(uint8_t value) {
     //check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
-    if (((value & 0x0f) - 1) > 0x0f) {
+    if (!(((value & 0x0f) - 1) > 0x0f)) {
         this->state.setFlag(State8080::AC);
     } else {
         this->state.unSetFlag(State8080::AC);
     }
+
     --value; 
     // set flags based on result of operation
     this->updateZeroFlag(value);
     this->updateSignFlag(value);
     this->updateParityFlag(value);
 
-    this->state.unSetFlag(State8080::AC);
+    //this->state.unSetFlag(State8080::AC);
     return value; // return the decremented value
 }
 
@@ -2881,7 +2885,7 @@ uint8_t Emulator8080::incrementValue(uint8_t value) {
     this->updateSignFlag(value);
     this->updateParityFlag(value);
 
-    this->state.unSetFlag(State8080::AC);
+    //this->state.unSetFlag(State8080::AC);
     return value; // return the decremented value
 }
 
@@ -2911,7 +2915,7 @@ uint8_t Emulator8080::subtractValues(
     this->updateParityFlag(difference);
 
     // AC flag only set for addition
-    this->state.unSetFlag(State8080::AC);
+    //this->state.unSetFlag(State8080::AC);
 
     // determine state of carry flag
     if (result & 0x0100) { //0b0000'0001'0000'0000 mask

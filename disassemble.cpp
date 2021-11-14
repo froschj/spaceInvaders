@@ -46,6 +46,7 @@ std::unique_ptr <struct disassembleArguments> parseArguments(
 );
 
 int main(int argc, char *argv[]) {
+	std::ios_base::sync_with_stdio(false);
     // send the argment variables to the TCLAP parser
     std::unique_ptr<struct disassembleArguments> args = 
         parseArguments(argc, argv);
@@ -63,7 +64,7 @@ int main(int argc, char *argv[]) {
     std::ifstream romFile;
     romFile.open(args->romFileName, std::ios::binary);
     if (romFile.fail()){
-        std::cerr << "Could not open file: " << args->romFileName << std::endl;
+        std::cerr << "Could not open file: " << args->romFileName << '\n';
         return 1;
     }
 
@@ -73,7 +74,7 @@ int main(int argc, char *argv[]) {
     int romLength = romFile.tellg();
     romFile.seekg(0, romFile.beg);
     if (romLength + startAddress > 0x10000) {
-        std::cerr << "File too long." << std::endl;
+        std::cerr << "File too long." << '\n';
         return 1;
     }
 
@@ -85,7 +86,7 @@ int main(int argc, char *argv[]) {
         romLength
     );
     if (romFile.fail()){
-        std::cerr << "Error reading file." << std::endl;
+        std::cerr << "Error reading file." << '\n';
         return 1;
     }
     romFile.close();
@@ -105,7 +106,7 @@ int main(int argc, char *argv[]) {
             if (i % DISPLAY_WIDTH == 0) {
                 if (i != 0){
                     std::cout << printable;
-                    std::cout << std::endl;
+                    std::cout << '\n';
                     printableIndex = 0;
                 }
                 std::cout << std::setw(4) << i << " ";
@@ -119,7 +120,7 @@ int main(int argc, char *argv[]) {
             ++printableIndex;
         }
         std::cout << printable;
-        std::cout << std::endl;
+        std::cout << '\n';
     } else if (args->commandName == "disassemble") {
         // do the disassembly
         Disassembler8080 debug8080(&rom);
@@ -132,7 +133,7 @@ int main(int argc, char *argv[]) {
         } catch (const std::exception& e) {
             // processor throws excptions on illegal memory read
             // and on unknown opcode
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.what() << '\n';
             return 1;
         }
 
@@ -163,8 +164,8 @@ int main(int argc, char *argv[]) {
                         auto cpuRegisters = emulator.getState();
                         uint16_t stringOffset = (cpuRegisters->d << 8) 
                             + cpuRegisters->e;
-                        stringOffset += 3; // skip prefix
-                        std::cout << std::endl; // prefix is a newline
+                        //stringOffset += 3; // skip prefix
+                        //std::cout << '\n'; // prefix is a newline
                         while (
                             static_cast<char>(rom.read(stringOffset)) != '$'
                         ) {
@@ -198,7 +199,7 @@ int main(int argc, char *argv[]) {
                     disassembler.step();
                     state = emulator.getState();
                     disassembler.reset(state->pc);
-                    std::cout << "Cycles: " << std::dec << cycles << std::endl;
+                    std::cout << "Cycles: " << std::dec << cycles << '\n';
                     std::cout << std::right << std::hex << std::setfill('0');
                     std::cout << "A: 0x" << std::setw(2) 
                         << static_cast<int>(state->a) << " ";
@@ -220,7 +221,7 @@ int main(int argc, char *argv[]) {
                         << static_cast<int>(state->pc) << " ";
                     std::cout << "Flags: 0b" << std::setw(8)
                         << std::bitset<8>(static_cast<int>(state->getFlags()));
-                    std::cout << std::endl;
+                    std::cout << '\n';
                 }
                 if (args->isCpmMode && (emulator.getState()->pc == 0)) {
                     finished = true;
@@ -229,14 +230,14 @@ int main(int argc, char *argv[]) {
         } catch (const std::exception& e) {
             // processor throws excptions on illegal memory read
             // and on unknown opcode
-            std::cerr << e.what() << std::endl;
+            std::cerr << e.what() << '\n';
             return 1;
         }
     }
 
-    //std::cout << "Filename: " << args->romFileName << std::endl;
-    //std::cout << "Binary Mode? " << args->isHexDumpMode << std::endl;
-    std::cout << std::endl;
+    //std::cout << "Filename: " << args->romFileName << '\n';
+    //std::cout << "Binary Mode? " << args->isHexDumpMode << '\n';
+    std::cout << '\n';
     return 0;
 }
 
@@ -307,7 +308,7 @@ std::unique_ptr <struct disassembleArguments> parseArguments(
             << e.error() 
             << " for arg " 
             << e.argId() 
-            << std::endl; 
+            << '\n'; 
         return std::unique_ptr<struct disassembleArguments>(nullptr);
     }
 
