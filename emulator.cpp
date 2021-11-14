@@ -2900,7 +2900,7 @@ uint8_t Emulator8080::subtractValues(
 
     // check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
     // do operation on low nibble, see if something propagated to the high
-    if (((minuend & 0x0f) - (subtrahend & 0x0f) - carryBit) & 0xf0) {
+    if (!(((minuend & 0x0f) - (subtrahend & 0x0f) - carryBit) & 0xf0)) {
         this->state.setFlag(State8080::AC);
     } else {
         this->state.unSetFlag(State8080::AC);
