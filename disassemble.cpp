@@ -21,6 +21,7 @@
 #include <string>
 #include <bitset>
 #include "emulator.hpp"
+#include <chrono>
 
 
 
@@ -189,12 +190,17 @@ int main(int argc, char *argv[]) {
             
         }
         emulator.connectInput([](uint8_t port){ return 0xff; });
+
+        unsigned long long cycles = 0;
+        unsigned long long instructions = 0;
+        auto startTime = std::chrono::high_resolution_clock::now();
+
         try {
-            unsigned long long cycles = 0;
             std::unique_ptr<struct State8080> state = nullptr;
             bool finished = false;
             while (!finished) {
                 cycles += emulator.step();
+                ++instructions;
                 if (args->commandName == "debug") {
                     disassembler.step();
                     state = emulator.getState();
@@ -227,6 +233,17 @@ int main(int argc, char *argv[]) {
                     finished = true;
                 } 
             } 
+        auto stopTime = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<long long, std::nano> runTime = 
+            stopTime - startTime;
+        double runSeconds = static_cast<double>(runTime.count()) * 1.e-9;
+        std::cout << std::endl;
+        std::cout << "Ran " << instructions << " instructions"; 
+        std::cout << " in " << runSeconds << " seconds."<<std::endl;
+        std::cout << "Used " << cycles << " cycles." << std::endl;
+        double megahertz = (static_cast<double>(cycles) / runSeconds) / 1.e6;
+        std::cout << "Approximate clock speed: " << megahertz;
+        std::cout << " MHz." << std::endl;
         } catch (const std::exception& e) {
             // processor throws excptions on illegal memory read
             // and on unknown opcode
@@ -234,9 +251,8 @@ int main(int argc, char *argv[]) {
             return 1;
         }
     }
-
-    //std::cout << "Filename: " << args->romFileName << '\n';
-    //std::cout << "Binary Mode? " << args->isHexDumpMode << '\n';
+    
+    
     std::cout << '\n';
     return 0;
 }
