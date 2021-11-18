@@ -1,3 +1,7 @@
+/*
+CS467 - Build an emulator and run space invaders rom
+Jon Frosch & Phil Sheets
+*/
 #pragma once
 #include <functional>
 
@@ -81,8 +85,8 @@ class Adapter
 		void playSoundFleetMove4();		
 		void playSoundInvaderDie();		
 		void playSoundShoot();		
-		//void playSoundUFO(bool start);		
-		void startSoundUFO();
+		//UFO sound loops, so requires start/stop
+		void startSoundUFO(); 
 		void stopSoundUFO();
 		void playSoundUFOHit();
 

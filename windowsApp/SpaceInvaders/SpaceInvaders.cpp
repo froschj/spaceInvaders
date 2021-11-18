@@ -1,6 +1,11 @@
-// SpaceInvaders.cpp : Defines the entry point for the application.
-//
+/*
+CS467 - Build an emulator and run space invaders rom
+Jon Frosch & Phil Sheets
 
+This is the platform-specific (Windows application) code for the
+program. It is used to display the screen, gather input, play sounds,
+and advance the machine emulator every frame.
+*/
 #include "framework.h"
 #include <mmsystem.h> //For PlaySounds
 #include "SpaceInvaders.h"
@@ -12,6 +17,7 @@
 #include <fstream>
 #include <memory>
 #include "soundDevice.h"
+#include "snapshot.h"
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -26,22 +32,12 @@ LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 //SpaceInvaders variables and forward declares
-//void PlaySoundResource(int lpResourceName, bool looping);
-//void PlaySoundPlayerDie();
-//void PlaySoundFleetMove1();
-//void PlaySoundFleetMove2();
-//void PlaySoundFleetMove3();
-//void PlaySoundFleetMove4();
-//void PlaySoundInvaderDie();
-//void PlaySoundShoot();
-//void StartSoundUFO();
-//void StopSoundUFO();
-//void PlaySoundUFOHit();
-
 void DrawScreen(HWND hWnd, HDC hdc);
 void LoadROMIntoMemory();
 
 void RefreshScreen();
+void TakeSnapshot();
+void RewindSnapshot();
 
 Adapter platformAdapter;
 Machine machine;
@@ -54,6 +50,10 @@ bool g_screenNeedsRefresh;
 HWND g_hWndGameWindow;
 
 const int NUMBER_OF_COLORS = 4;
+static uint8_t COLOR_BLACK = 0x00;
+static uint8_t COLOR_WHITE = 0x01;
+static uint8_t COLOR_MAGENTA = 0x02;
+static uint8_t COLOR_GREEN = 0x03;
 RGBQUAD COLOR_TABLE[NUMBER_OF_COLORS];
 const int NATIVE_HEIGHT_PIXELS = 256;
 const int NATIVE_WIDTH_PIXELS = 224;
@@ -62,6 +62,11 @@ const int DEFAULT_SCALE_FACTOR = 2;
 BITMAPINFO* bi;
 
 std::unique_ptr<InvaderSoundDevice> soundPlayer;
+
+bool g_paused;
+std::vector<SpaceInvaderMemory> rewindMemory;
+std::vector<std::shared_ptr<Snapshot>> snapshots;
+int g_snapshotIndex;
 
 //end declares
 
@@ -79,10 +84,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	int screenPixelBufferSize = NATIVE_HEIGHT_PIXELS * NATIVE_WIDTH_PIXELS; //57344 total pixels
 	g_videoBuffer = reinterpret_cast<uint8_t*>(std::malloc(screenPixelBufferSize * sizeof(uint8_t)));
 
-	COLOR_TABLE[0] = RGBQUAD{ 0x00,0x00,0x00,0 }; // color 0, black for background
-	COLOR_TABLE[1] = RGBQUAD{ 0xff,0xff,0xff,0 }; // color 1, white for foreground
-	COLOR_TABLE[2] = RGBQUAD{ 0x44,0x11,0xff,0 }; // color 2, magenta for upper foreground band
-	COLOR_TABLE[3] = RGBQUAD{ 0x08,0x9d,0x13,0 }; // color 3, green for upper foreground band
+	//Create the bitmap color palette to be used for drawing the screen
+	COLOR_TABLE[COLOR_BLACK] = RGBQUAD{ 0x00,0x00,0x00,0 }; // color 0, black for background
+	COLOR_TABLE[COLOR_WHITE] = RGBQUAD{ 0xff,0xff,0xff,0 }; // color 1, white for foreground
+	COLOR_TABLE[COLOR_MAGENTA] = RGBQUAD{ 0x44,0x11,0xff,0 }; // color 2, magenta for upper foreground band
+	COLOR_TABLE[COLOR_GREEN] = RGBQUAD{ 0x08,0x9d,0x13,0 }; // color 3, green for upper foreground band
 
 	bi = (BITMAPINFO*)malloc(sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
 	if (!bi) exit(EXIT_FAILURE);
@@ -101,16 +107,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	//Connect machine and platform sound output
-	/*platformAdapter.setShootFunction(&PlaySoundShoot);
-	platformAdapter.setPlayerDieSoundFunction(&PlaySoundPlayerDie);
-	platformAdapter.setInvaderDieFunction(&PlaySoundInvaderDie);
-	platformAdapter.setStartUFOFunction(&StartSoundUFO);
-	platformAdapter.setStopUFOFunction(&StopSoundUFO);
-	platformAdapter.setUFOHitFunction(&PlaySoundUFOHit);
-	platformAdapter.setFleetMove1Function(&PlaySoundFleetMove1);
-	platformAdapter.setFleetMove2Function(&PlaySoundFleetMove2);
-	platformAdapter.setFleetMove3Function(&PlaySoundFleetMove3);
-	platformAdapter.setFleetMove4Function(&PlaySoundFleetMove4);*/
 	soundPlayer = std::make_unique<InvaderSoundDevice>("..\\..\\sounds\\");
 	platformAdapter.setShootFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::SHOT); });
 	platformAdapter.setPlayerDieSoundFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::PLAYER_DEATH); });
@@ -161,7 +157,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	while (g_gameRunning)
 	{
 		//Prepare to gather input
-		platformAdapter.setInputChanged(false);
+		if (!g_paused)
+		{
+			platformAdapter.setInputChanged(false);
+		}
 
 		//Check for input or need to redraw screen
 		while (PeekMessage(&msg, 0, 0, 0, PM_REMOVE))
@@ -174,7 +173,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 
 		//Advance the machine, it will trigger a screen refresh when needed
-		machine.step();
+		if (!g_paused)
+		{
+			machine.step();
+		}
 		
 	}
 	free(g_videoBuffer);
@@ -226,7 +228,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    //Space Invaders screen: 256x224 pixels
    HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
 	   CW_USEDEFAULT, 0, NATIVE_WIDTH_PIXELS * DEFAULT_SCALE_FACTOR, NATIVE_HEIGHT_PIXELS * DEFAULT_SCALE_FACTOR, nullptr, nullptr, hInstance, nullptr);
-
 	
    if (!hWnd)
    {
@@ -255,19 +256,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
-	case WM_CREATE:
-		{	
-			//Open sound files with aliases
-			/*mciSendString(_T("open 1.wav alias shoot"), NULL, 0, 0);
-			mciSendString(_T("open 2.wav alias playerDie"), NULL, 0, 0);
-			mciSendString(_T("open 4.wav alias fleetMove1"), NULL, 0, 0);
-			mciSendString(_T("open 5.wav alias fleetMove2"), NULL, 0, 0);
-			mciSendString(_T("open 6.wav alias fleetMove3"), NULL, 0, 0);
-			mciSendString(_T("open 7.wav alias fleetMove4"), NULL, 0, 0);
-			mciSendString(_T("open 3.wav alias invaderDie"), NULL, 0, 0);
-			mciSendString(_T("open 8.wav alias ufoHit"), NULL, 0, 0);*/
-		}
-		break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -289,8 +277,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-
+	
 			DrawScreen(hWnd, hdc);
 
             EndPaint(hWnd, &ps);
@@ -367,6 +354,22 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case VK_OEM_PLUS:
 				// + key, sound test UFO hit
 				machine.writePortValue(5, 0x10);
+				break;
+			case 0x50:
+				//P key
+				g_paused = !g_paused;
+				break;
+			case 0x49:
+				//I key
+				//TakeSnapshot
+				TakeSnapshot();
+				break;
+			case 0x4F:
+				//O key
+				//Attempt to go back in time
+				g_paused = true;
+				RewindSnapshot();
+				RefreshScreen();
 				break;
 			default:
 				return DefWindowProc(hWnd, message, wParam, lParam);
@@ -506,36 +509,38 @@ void DrawScreen(HWND hWnd, HDC hdc)
 	int rowWidth = NATIVE_WIDTH_PIXELS;
 	int rowIndex = NATIVE_HEIGHT_PIXELS - 1; //reduce by 1 for 0-indexing
 	int columnIndex = 0;
-	for (int i = 0x2400; i < 0x4000; ++i)
+
+	static int VIDEO_BUFFER_BEGIN = 0x2400;
+	static int VIDEO_BUFFER_END = 0x4000;
+
+	for (int i = VIDEO_BUFFER_BEGIN; i < VIDEO_BUFFER_END; ++i)
 	{
 		uint8_t bitBlock = memory->read(i);
 
 		//Rotate pixels counter-clockwise, so draw every column bottom-up
-		uint8_t background = 0x00;
-		//uint8_t high = 0xFF;
 		auto foreground = [](int row, int column)
 		{
 			if ((row <= 32) || ((row > 64) && (row <= 184)) || ((row > 240) && ((column <= 15) || (column > 134))))
 			{
-				return 0x01; //white
+				return COLOR_WHITE;
 			} 
 			else if (row > 32 && row <= 64)
 			{
-				return 0x02; //magenta
+				return COLOR_MAGENTA;
 			}
 			else
 			{
-				return 0x03; //green
+				return COLOR_GREEN;
 			}
 		};
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 0) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 1) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 2) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 3) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 4) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 5) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 6) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
-		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 7) & 0x1 ? foreground(rowIndex + 1, columnIndex) : background;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 0) & 0x1 ? foreground(rowIndex + 1, columnIndex) : COLOR_BLACK;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 1) & 0x1 ? foreground(rowIndex + 1, columnIndex) : COLOR_BLACK;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 2) & 0x1 ? foreground(rowIndex + 1, columnIndex) : COLOR_BLACK;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 3) & 0x1 ? foreground(rowIndex + 1, columnIndex) : COLOR_BLACK;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 4) & 0x1 ? foreground(rowIndex + 1, columnIndex) : COLOR_BLACK;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 5) & 0x1 ? foreground(rowIndex + 1, columnIndex) : COLOR_BLACK;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 6) & 0x1 ? foreground(rowIndex + 1, columnIndex) : COLOR_BLACK;
+		g_videoBuffer[rowIndex-- * rowWidth + columnIndex] = (bitBlock >> 7) & 0x1 ? foreground(rowIndex + 1, columnIndex) : COLOR_BLACK;
 
 		if (rowIndex < 0)
 		{
@@ -544,35 +549,29 @@ void DrawScreen(HWND hWnd, HDC hdc)
 		}
 		
 	}
-	/*
-	BITMAPINFO* bi = (BITMAPINFO*)malloc(sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
-	if (!bi) exit(EXIT_FAILURE);
-	memset(bi, 0, sizeof(BITMAPINFOHEADER) + NUMBER_OF_COLORS * sizeof(RGBQUAD));
-	bi->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bi->bmiHeader.biWidth = NATIVE_WIDTH_PIXELS;
-	bi->bmiHeader.biHeight = -NATIVE_HEIGHT_PIXELS;
-	bi->bmiHeader.biPlanes = 1;
-	bi->bmiHeader.biBitCount = BMP_BITS_PER_PIXEL;
-	bi->bmiHeader.biCompression = BI_RGB;
-	bi->bmiHeader.biClrUsed = NUMBER_OF_COLORS;
 
-	for (int i = 0; i < NUMBER_OF_COLORS; ++i) 
-	{
-		bi->bmiColors[i] = COLOR_TABLE[i];
-	}
-	*/
-	//Get current screen size
+	//Enforce correct aspect ratio for displayed screen
+	static float aspectRatio = 256/224;
 	RECT clientRect;
 	GetClientRect(hWnd, &clientRect);
 	int targetWidth = clientRect.right - clientRect.left;
 	int targetHeight = clientRect.bottom - clientRect.top;
+	if (targetHeight >= targetWidth * aspectRatio)
+	{
+		targetHeight = targetWidth * aspectRatio;
+		//targetWidth = targetHeight / aspectRatio;
+	}
+	else
+	{
+		//targetWidth = targetHeight / aspectRatio;
+		//targetHeight = targetWidth * aspectRatio;
+	}
 
-	//TODO Find the correct ratio to fit in the screen	
 	int x = StretchDIBits(hdc, 0, 0, targetWidth, targetHeight, 0, 0, NATIVE_WIDTH_PIXELS, NATIVE_HEIGHT_PIXELS, g_videoBuffer, bi, DIB_RGB_COLORS, SRCCOPY);
-	//free(bi);
 }
 
-//Reading bundled ROM file as resource instead of external file
+//Load the bundled ROM file of the application into the memory object
+//used by the emulator.
 //https://stackoverflow.com/questions/9240188/how-to-load-a-custom-binary-resource-in-a-vc-static-library-as-part-of-a-dll
 void LoadROMIntoMemory()
 {
@@ -599,102 +598,59 @@ void LoadROMIntoMemory()
 	FreeResource(hRomData);
 }
 
-//From MSDN documentation on PlaySound/sndPlaySound
-/*
-void PlaySoundResource(int lpResourceName, bool looping=false)
-{
-	HRSRC hResInfo;
-	HANDLE hRes;
-	LPCWSTR lpWavInMemory;
-
-	hResInfo = FindResource(NULL, MAKEINTRESOURCE(lpResourceName), L"WAVE");
-
-	if (hResInfo == NULL)
-		return;
-
-	hRes = LoadResource(NULL, hResInfo);
-
-	if (hRes == NULL)
-		return;
-
-	lpWavInMemory = (LPCWSTR)LockResource(hRes);
-
-	if (looping)
-	{
-		sndPlaySound(lpWavInMemory, SND_MEMORY | SND_ASYNC | SND_LOOP |
-			SND_NODEFAULT);
-	}
-	else
-	{
-		sndPlaySound(lpWavInMemory, SND_MEMORY | SND_ASYNC |
-			SND_NODEFAULT);
-	}
-
-	UnlockResource(hRes);
-	FreeResource(hRes);
-}
-*/
-/*
-void PlaySoundPlayerDie()
-{
-	//PlaySoundResource(IDR_PLAYER_DIE);
-	mciSendString(_T("play playerDie from 0"), NULL, 0, 0);
-}
-
-void PlaySoundFleetMove1()
-{
-	//PlaySoundResource(IDR_FLEET_MOVE_1);
-	mciSendString(_T("play fleetMove1 from 0"), NULL, 0, 0);
-}
-
-void PlaySoundFleetMove2()
-{
-	//PlaySoundResource(IDR_FLEET_MOVE_2);
-	mciSendString(_T("play fleetMove2 from 0"), NULL, 0, 0);
-}
-
-void PlaySoundFleetMove3()
-{
-	//PlaySoundResource(IDR_FLEET_MOVE_3);
-	mciSendString(_T("play fleetMove3 from 0"), NULL, 0, 0);
-}
-
-void PlaySoundFleetMove4()
-{
-	//PlaySoundResource(IDR_FLEET_MOVE_4);
-	mciSendString(_T("play fleetMove4 from 0"), NULL, 0, 0);
-}
-
-void PlaySoundInvaderDie()
-{
-	//PlaySoundResource(IDR_INVADER_DIE);
-	mciSendString(_T("play invaderDie from 0"), NULL, 0, 0);
-}
-
-void PlaySoundShoot()
-{
-	//PlaySoundResource(IDR_SHOOT);
-	mciSendString(_T("play shoot from 0"), NULL, 0, 0);
-}
-
-void StartSoundUFO()
-{
-	PlaySound(_T("0.wav"), NULL, SND_LOOP | SND_ASYNC);
-}
-
-void StopSoundUFO()
-{
-	PlaySound(NULL, NULL, 0);
-}
-
-void PlaySoundUFOHit()
-{
-	//PlaySoundResource(IDR_UFO_HIT);
-	mciSendString(_T("play ufoHit from 0"), NULL, 0, 0);
-}
-*/
 void RefreshScreen()
 {
 	InvalidateRect(g_hWndGameWindow, 0, 0);
 }
 
+void TakeSnapshot()
+{
+	std::shared_ptr<Snapshot> snapshot = std::make_shared<Snapshot>();
+	std::unique_ptr<State8080> state = emulator.getState();
+	snapshot->state.a = state->a;
+	snapshot->state.b = state->b;
+	snapshot->state.c = state->c;
+	snapshot->state.d = state->d;
+	snapshot->state.e = state->e;
+	snapshot->state.h = state->h;
+	snapshot->state.l = state->l;
+	snapshot->state.sp = state->sp;
+	snapshot->state.pc = state->pc;
+	snapshot->state.loadFlags(state->getFlags());
+
+	snapshot->copyMemory(emulator.memory);
+	if (g_snapshotIndex == snapshots.size())
+	{
+		snapshots.push_back(snapshot);
+	}
+	else
+	{
+		//We've rewound, so start overwriting
+		snapshots[g_snapshotIndex] = snapshot;		
+	}
+	g_snapshotIndex++;
+}
+
+void RewindSnapshot()
+{
+	if (g_snapshotIndex == 0)
+	{
+		return;
+	}
+
+	g_snapshotIndex--;
+	State8080 state = snapshots[g_snapshotIndex]->state;
+	emulator.state.a = state.a;
+	emulator.state.b = state.b;
+	emulator.state.c = state.c;
+	emulator.state.d = state.d;
+	emulator.state.e = state.e;
+	emulator.state.h = state.h;
+	emulator.state.l = state.l;
+	emulator.state.sp = state.sp;
+	emulator.state.pc = state.pc;
+	emulator.state.loadFlags(state.getFlags());
+	uint8_t* dataPtr = snapshots[g_snapshotIndex]->romData.data();
+	//memory->flashROM(snapshots[g_snapshotIndex]->romData.data(), snapshots[g_snapshotIndex]->romData.size(), 0);
+	memory->flashROM(dataPtr, snapshots[g_snapshotIndex]->romData.size(), 0);
+}

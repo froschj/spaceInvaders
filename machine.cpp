@@ -1,77 +1,42 @@
+/*
+CS467 - Build an emulator and run space invaders rom
+Jon Frosch & Phil Sheets
+
+Machine emulator. This class emulates the arcade cabinet for space invaders.
+It provides a step() function to advance the CPU emulator and trigger
+interrupts for each half and end frame. Input is processed via setting
+bits in the emulated ports. Output is also handled when emulator writes
+port values, which will trigger sounds in the platform adapter.
+
+See computer archeology for information on the port handling for I/O
+and shift register
+http://computerarcheology.com/Arcade/SpaceInvaders/Hardware.html
+https://en.cppreference.com/w/cpp/chrono/time_point
+https://www.dummies.com/programming/c/how-to-use-hex-with-binary-for-c-programming/
+*/
+
 #include "machine.hpp"
 #include "platformAdapter.hpp"
 #include "emulator.hpp"
 #include <chrono>
 
-//https://en.cppreference.com/w/cpp/chrono/time_point
-//https://www.dummies.com/programming/c/how-to-use-hex-with-binary-for-c-programming/
 
-/*
-Read 1
-BIT 0   coin(0 when active)
-1   P2 start button
-2   P1 start button
-3 ?
-4   P1 shoot button
-5   P1 joystick left
-6   P1 joystick right
-7 ?
 
-Read 2
-BIT 0, 1 dipswitch number of lives(0:3, 1 : 4, 2 : 5, 3 : 6)
-2   tilt 'button'
-3   dipswitch bonus life at 1 : 1000, 0 : 1500
-4   P2 shoot button
-5   P2 joystick left
-6   P2 joystick right
-7   dipswitch coin info 1 : off, 0 : on
-*/
-
-/*
-Port 2:
- bit 0,1,2 Shift amount
-
-Port 3: (discrete sounds)
- bit 0=UFO (repeats)        SX0 0.raw
- bit 1=Shot                 SX1 1.raw
- bit 2=Flash (player die)   SX2 2.raw
- bit 3=Invader die          SX3 3.raw
- bit 4=Extended play        SX4
- bit 5= AMP enable          SX5
- bit 6= NC (not wired)
- bit 7= NC (not wired)
-
- Port 4: (discrete sounds)
- bit 0-7 shift data (LSB on 1st write, MSB on 2nd)
-
-Port 5:
- bit 0=Fleet movement 1     SX6 4.raw
- bit 1=Fleet movement 2     SX7 5.raw
- bit 2=Fleet movement 3     SX8 6.raw
- bit 3=Fleet movement 4     SX9 7.raw
- bit 4=UFO Hit              SX10 8.raw
- bit 5= NC (Cocktail mode control ... to flip screen)
- bit 6= NC (not wired)
- bit 7= NC (not wired)
-*/
-
-Machine::Machine() : _emulator(0), _platformAdapter(0), _port1(0), _port2(0), shiftRegister(0), shiftRegisterOffset(0), cycleCount(0)
+Machine::Machine() : _emulator(0), _platformAdapter(0), _port1(0), _port2(0), 
+					shiftRegister(0), shiftRegisterOffset(0), cycleCount(0),
+					_prev_port3(0), _prev_port5(0)
 {
 	_frameStartTime = std::chrono::high_resolution_clock::now();
 }
 
+//Sets the cpu emulator used by this machine.
+//Also sets the port input/output callback functions for the cpu emulator.
 void Machine::setEmulator(Emulator8080* emulator)
 {
 	_emulator = emulator;
 	
-	/*
-	_emulator->connectInput([](uint8_t port) { return 0xff; });
-	_emulator->connectOutput([](uint8_t port, uint8_t value) {return; });
-	*/
-	
 	_emulator->connectInput([this](uint8_t port) { return this->readPortValue(port); });
-	_emulator->connectOutput([this](uint8_t port, uint8_t value) { this->writePortValue(port, value); });
-	
+	_emulator->connectOutput([this](uint8_t port, uint8_t value) { this->writePortValue(port, value); });	
 }
 
 void Machine::setPlatformAdapter(Adapter* platformAdapter)
@@ -79,15 +44,16 @@ void Machine::setPlatformAdapter(Adapter* platformAdapter)
 	_platformAdapter = platformAdapter;
 }
 
-
-//Advance one step, handling input and output
+//Main processing loop of the machine. Processes input to change
+//bits in the port values. Determines if enough time has elapsed to tirgger
+//a half-frame (RST2) or end-of-frame (RST1) interrupt. If so, advances
+//the cpu emulator the correct number of cycles for the elapsed time.
 void Machine::step()
 {
 	if (!_emulator)
 	{
 		return;
 	}
-
 
 	//Check platform for input
 	if (_platformAdapter->isInputChanged())
@@ -100,13 +66,15 @@ void Machine::step()
 	auto checkTime = std::chrono::high_resolution_clock::now();
 	auto duration = std::chrono::duration_cast<std::chrono::microseconds>(checkTime - _frameStartTime);
 		
-	if (duration.count() > 8333) //16666 microsec in a 1/60 sec frame, check for interrupt every half frame
+	//Framerate is 60hz. Interrupt the cpu twice per frame (mid-frame and at end)
+	//Redraw the screen at end of every frame.
+	if (duration.count() > 8333) //16666 microseconds in a 1/60 sec frame, check for interrupt every half frame
 	{
-		bool drawScreen = false;
-		//TODO WIP interrupt
+		bool drawScreen = false;		
 		bool isInterruptable = _emulator->isInterruptEnable();
+
 		if (isInterruptable)
-		{	//0xcf RST 1, 0xd7 RST 2
+		{	
 			if (useRST1)
 			{	//End of frame interrupt
 				_emulator->requestInterrupt(RST1); 
@@ -114,6 +82,7 @@ void Machine::step()
 			}
 			else
 			{
+				//mid-frame interrupt
 				_emulator->requestInterrupt(RST2);
 			}
 			
@@ -121,6 +90,9 @@ void Machine::step()
 		}
 		
 		//Catch up the CPU for the time that has passed
+		//This emulator should be a 2mhz speed. Since we advance twice a frame,
+		//this means that 1mhz should pass - which is the same as the microseconds
+		//value that has elapsed. So advance the cpu 1 cycle for every microsecond.
 		cycleCount = 0;
 		uint64_t cycles = duration.count();
 		while (cycleCount < cycles)
@@ -139,9 +111,10 @@ void Machine::step()
 
 }
 
+//Sets the emulated port bits for the input based on the platform
+//adapter settings.
 void Machine::processInput()
 {
-	//Currently do not care what changed, just update all
 	setCoinBit(_platformAdapter->isCoin());
 	
 	//Start bits
@@ -281,14 +254,21 @@ void Machine::setP2RightBit(bool isSet)
 	
 }
 
+//Emulates writing port values to the machine. The cpu emulator
+//writes to the port when:
+// port 2: to write the offset value used in the shift register
+// port 3 & 5: to trigger sounds in the machine
+// port 4: to write a value to the shift register
+// parameter port: Which port to write
+// parameter value: new value for the port
 void Machine::writePortValue(uint8_t port, uint8_t value)
 {
 	switch (port)
 	{
 		case 2: //shift value
-		/*
+			/*
 			;    Writing to port 2 (bits 0, 1, 2) sets the offset for the 8 bit result, eg.
-		*/
+			*/
 			shiftRegisterOffset = (value & 0x7); //Use only right 3 bits
 			break;
 		case 3: //sounds
@@ -302,7 +282,7 @@ void Machine::writePortValue(uint8_t port, uint8_t value)
 			//Only play sounds when first changed
 			if (value != _prev_port3)
 			{
-				//TODO the UFO sound repeats, need to implement that behavior
+				//the UFO sound repeats
 				if (value & 0x01 && !(_prev_port3 & 0x01))
 				{
 					//bit 0 - ufo sound started
@@ -332,11 +312,11 @@ void Machine::writePortValue(uint8_t port, uint8_t value)
 			break;
 		case 4:
 			/*
-			; 16 bit shift register:
-			;    f              0    bit
+				; 16 bit shift register:
+				;    f              0    bit
 				;    xxxxxxxxyyyyyyyy
 				;
-			;    Writing to port 4 shifts x into y, and the new value into x, eg.
+				;    Writing to port 4 shifts x into y, and the new value into x, eg.
 				;    $0000,
 				;    write $aa->$aa00,
 				;    write $ff->$ffaa,
@@ -348,13 +328,14 @@ void Machine::writePortValue(uint8_t port, uint8_t value)
 			shiftRegister |= rightHalf;
 			break;
 		case 5:
-				/*
-				bit 0 = Fleet movement 1     SX6 4.raw
-				bit 1 = Fleet movement 2     SX7 5.raw
-				bit 2 = Fleet movement 3     SX8 6.raw
-				bit 3 = Fleet movement 4     SX9 7.raw
-				bit 4 = UFO Hit              SX10 8.raw
-				*/
+			/*
+			bit 0 = Fleet movement 1     SX6 4.raw
+			bit 1 = Fleet movement 2     SX7 5.raw
+			bit 2 = Fleet movement 3     SX8 6.raw
+			bit 3 = Fleet movement 4     SX9 7.raw
+			bit 4 = UFO Hit              SX10 8.raw
+			*/
+			//Play sounds, only when changes occur
 			if (value != _prev_port5)
 			{
 				if (value & 0x01 && !(_prev_port5 & 0x01))
@@ -387,6 +368,12 @@ void Machine::writePortValue(uint8_t port, uint8_t value)
 	}
 }
 
+//Emulates reading port values from the machine.
+//The cpu emulator will read values for input, or for the result
+//of the "hardware" shift register
+// port 1&2: input ports
+// port 3: result of shift register
+// parameter port: Which port to read.
 uint8_t Machine::readPortValue(uint8_t port)
 {
 	uint8_t value{0};
@@ -419,7 +406,7 @@ uint8_t Machine::readPortValue(uint8_t port)
 			offset = 8;
 			//Apply the shift offset in the opposite direction
 			offset -= shiftRegisterOffset;
-			//TODO verify 0xFF required to go from int16 to int8
+			//shift and return 8bit value
 			value = (shiftRegister >> offset) & 0xFF;
 
 			break;

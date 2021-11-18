@@ -81,8 +81,8 @@ class Processor {
         } // return a copy of the current state
         virtual void connectMemory(memoryType *memoryDevice) {
             memory = memoryDevice;
-        }; // connect the processor to a memory
-    protected:
+        } // connect the processor to a memory
+    //protected:
         stateType state;
         memoryType *memory;
 };

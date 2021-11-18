@@ -1,3 +1,15 @@
+/*
+CS467 - Build an emulator and run space invaders rom
+Jon Frosch & Phil Sheets
+
+The Platform Adapter is used to link functionality between
+the machine emulator and the platform-specific application
+(such as a Windows application).
+
+To use it, pass in the callback functions for playing sounds/etc.
+During processing, setInputChanged() to false every frame prior to
+checking for input from the platform.
+*/
 #include "platformAdapter.hpp"
 
 bool Adapter::isInputChanged()

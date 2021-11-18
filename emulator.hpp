@@ -110,7 +110,6 @@ class Emulator8080 :
         // returns the number of CPU clock cycles to process the interrupt
         int requestInterrupt(uint8_t opcode);
 
-
     private:
         // fetch instruction at address
         uint8_t fetch(uint16_t address);
