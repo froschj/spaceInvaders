@@ -15,7 +15,6 @@
 #include <functional>
 #include <initializer_list>
 
-
 /*
  * State for the 8080 Disassembler. This only needs a pc register, since it 
  * will print to an ostream instead of execting instructions
@@ -64,7 +63,20 @@ struct State8080 : State {
             // make sure constant bits are correct
             flagsRegister &= 0b1101'0111;
             flagsRegister |= 0b0000'0010;
-        }
+        }		
+		void loadState(std::unique_ptr<struct State8080> newState)
+		{
+			this->a = newState->a;
+			this->b = newState->b;
+			this->c = newState->c;
+			this->d = newState->d;
+			this->e = newState->e;
+			this->h = newState->h;
+			this->l = newState->l;
+			this->sp = newState->sp;
+			this->pc = newState->pc;
+			this->loadFlags(newState->getFlags());
+		}
         bool isFlag(State8080::flag whichFlag) {
             return static_cast<bool>(flagsRegister & flagMasks[whichFlag]);
         }
@@ -109,7 +121,10 @@ class Emulator8080 :
         // request an interrupt. Accepts a one-byte 8080 opcode
         // returns the number of CPU clock cycles to process the interrupt
         int requestInterrupt(uint8_t opcode);
-
+				
+		std::unique_ptr<class Snapshot> TakeSnapshot();
+		void LoadSnapshot(std::unique_ptr<class Snapshot> snapshot);
+		
     private:
         // fetch instruction at address
         uint8_t fetch(uint16_t address);

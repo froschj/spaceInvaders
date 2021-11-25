@@ -18,6 +18,7 @@ and advance the machine emulator every frame.
 #include <memory>
 #include "soundDevice.h"
 #include "snapshot.h"
+#include <chrono>
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -38,6 +39,7 @@ void LoadROMIntoMemory();
 void RefreshScreen();
 void TakeSnapshot();
 void RewindSnapshot();
+void ForwardSnapshot();
 
 Adapter platformAdapter;
 Machine machine;
@@ -64,9 +66,13 @@ BITMAPINFO* bi;
 std::unique_ptr<InvaderSoundDevice> soundPlayer;
 
 bool g_paused;
-std::vector<SpaceInvaderMemory> rewindMemory;
-std::vector<std::shared_ptr<Snapshot>> snapshots;
-int g_snapshotIndex;
+
+#define NUM_SNAPSHOTS 20
+std::vector<std::unique_ptr<Snapshot>> snapshots;
+int g_snapshotIndex = 0;
+int g_snapshotStartIndex = 0;
+int g_snapshotEndIndex = 0;
+std::chrono::time_point<std::chrono::high_resolution_clock> g_snapshotStartTime;
 
 //end declares
 
@@ -160,6 +166,17 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (!g_paused)
 		{
 			platformAdapter.setInputChanged(false);
+
+			//Snapshot taken every 5 seconds
+			{
+				auto checkTime = std::chrono::high_resolution_clock::now();
+				auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(checkTime - g_snapshotStartTime);
+				if (duration.count() > 5000)
+				{
+					TakeSnapshot();
+					g_snapshotStartTime = std::chrono::high_resolution_clock::now();
+				}
+			}
 		}
 
 		//Check for input or need to redraw screen
@@ -358,18 +375,31 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			case 0x50:
 				//P key
 				g_paused = !g_paused;
+				if (g_paused)
+				{
+					//Take a snapshot, so we can always come back to
+					//this point if we rewound
+					TakeSnapshot();
+				}
 				break;
 			case 0x49:
 				//I key
-				//TakeSnapshot
-				TakeSnapshot();
-				break;
-			case 0x4F:
-				//O key
 				//Attempt to go back in time
 				g_paused = true;
 				RewindSnapshot();
 				RefreshScreen();
+				break;
+			case 0x4F:
+				//O key
+				//Attempt to go forward in time
+				g_paused = true;
+				ForwardSnapshot();
+				RefreshScreen();				
+				break;
+			case 0x54:
+				//T key
+				//TakeSnapshot
+				TakeSnapshot();				
 				break;
 			default:
 				return DefWindowProc(hWnd, message, wParam, lParam);
@@ -559,12 +589,10 @@ void DrawScreen(HWND hWnd, HDC hdc)
 	if (targetHeight >= targetWidth * aspectRatio)
 	{
 		targetHeight = targetWidth * aspectRatio;
-		//targetWidth = targetHeight / aspectRatio;
 	}
 	else
 	{
-		//targetWidth = targetHeight / aspectRatio;
-		//targetHeight = targetWidth * aspectRatio;
+		targetWidth = targetHeight / aspectRatio;
 	}
 
 	int x = StretchDIBits(hdc, 0, 0, targetWidth, targetHeight, 0, 0, NATIVE_WIDTH_PIXELS, NATIVE_HEIGHT_PIXELS, g_videoBuffer, bi, DIB_RGB_COLORS, SRCCOPY);
@@ -603,54 +631,65 @@ void RefreshScreen()
 	InvalidateRect(g_hWndGameWindow, 0, 0);
 }
 
+//Take a snapshot and store it in a circular array of NUM_SNAPSHOTS size
 void TakeSnapshot()
 {
-	std::shared_ptr<Snapshot> snapshot = std::make_shared<Snapshot>();
-	std::unique_ptr<State8080> state = emulator.getState();
-	snapshot->state.a = state->a;
-	snapshot->state.b = state->b;
-	snapshot->state.c = state->c;
-	snapshot->state.d = state->d;
-	snapshot->state.e = state->e;
-	snapshot->state.h = state->h;
-	snapshot->state.l = state->l;
-	snapshot->state.sp = state->sp;
-	snapshot->state.pc = state->pc;
-	snapshot->state.loadFlags(state->getFlags());
+	std::unique_ptr<Snapshot> snapshot = emulator.TakeSnapshot();
 
-	snapshot->copyMemory(emulator.memory);
 	if (g_snapshotIndex == snapshots.size())
 	{
-		snapshots.push_back(snapshot);
+		snapshots.push_back(std::move(snapshot));
 	}
 	else
 	{
-		//We've rewound, so start overwriting
-		snapshots[g_snapshotIndex] = snapshot;		
+		snapshots[g_snapshotIndex] = std::move(snapshot);
 	}
+
+	//If at last slot, advance end slot
+	if (g_snapshotIndex == g_snapshotEndIndex)
+	{
+		g_snapshotEndIndex++;
+		g_snapshotEndIndex = g_snapshotEndIndex % NUM_SNAPSHOTS;		
+	}
+
+	//End wrapped around to start, so move start up
+	if (g_snapshotEndIndex == g_snapshotStartIndex)
+	{
+		g_snapshotStartIndex++;
+		g_snapshotStartIndex = g_snapshotStartIndex % NUM_SNAPSHOTS;
+	}
+	
 	g_snapshotIndex++;
+	g_snapshotIndex = g_snapshotIndex % NUM_SNAPSHOTS;
+
 }
 
 void RewindSnapshot()
-{
-	if (g_snapshotIndex == 0)
+{	
+	if (g_snapshotIndex != g_snapshotStartIndex)
 	{
-		return;
+		g_snapshotIndex = g_snapshotIndex > 0 ? g_snapshotIndex - 1 : NUM_SNAPSHOTS - 1;
 	}
 
-	g_snapshotIndex--;
-	State8080 state = snapshots[g_snapshotIndex]->state;
-	emulator.state.a = state.a;
-	emulator.state.b = state.b;
-	emulator.state.c = state.c;
-	emulator.state.d = state.d;
-	emulator.state.e = state.e;
-	emulator.state.h = state.h;
-	emulator.state.l = state.l;
-	emulator.state.sp = state.sp;
-	emulator.state.pc = state.pc;
-	emulator.state.loadFlags(state.getFlags());
-	uint8_t* dataPtr = snapshots[g_snapshotIndex]->romData.data();
-	//memory->flashROM(snapshots[g_snapshotIndex]->romData.data(), snapshots[g_snapshotIndex]->romData.size(), 0);
-	memory->flashROM(dataPtr, snapshots[g_snapshotIndex]->romData.size(), 0);
+	if (g_snapshotIndex < snapshots.size() && snapshots[g_snapshotIndex] != NULL)
+	{
+		emulator.LoadSnapshot(std::move(snapshots[g_snapshotIndex]->clone()));
+	}
+}
+
+
+void ForwardSnapshot()
+{
+	//snapshotIndex normally points to the NEXT slot to save into
+	//So the last valid slot to move forward is endIndex - 2
+	if (g_snapshotIndex != g_snapshotEndIndex && (g_snapshotIndex + 1) % NUM_SNAPSHOTS != g_snapshotEndIndex)
+	{
+		g_snapshotIndex++;
+		g_snapshotIndex = g_snapshotIndex % NUM_SNAPSHOTS;
+	}
+
+	if (g_snapshotIndex < snapshots.size() && snapshots[g_snapshotIndex] != NULL)
+	{
+		emulator.LoadSnapshot(std::move(snapshots[g_snapshotIndex]->clone()));
+	}
 }

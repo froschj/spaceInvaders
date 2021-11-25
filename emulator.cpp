@@ -8,7 +8,7 @@
 #include "processor.hpp"
 #include "emulator.hpp"
 #include <stdexcept>
-
+#include "snapshot.h"
 
 
 // Build an Emulator8080 with no memory attached
@@ -3043,4 +3043,21 @@ int Emulator8080::requestInterrupt(uint8_t opcode) {
         << static_cast<int>(opcode);
         throw UnimplementedInterruptError(badOpcode.str());
     }
+}
+
+//Create a snapshot of the state and memory of the emulator
+std::unique_ptr<Snapshot> Emulator8080::TakeSnapshot()
+{
+	std::unique_ptr<Snapshot> snap = std::make_unique<Snapshot>();
+	snap->copyMemory(memory);
+	snap->state = state.clone();
+	return snap;
+}
+
+//given a snapshot of state and memory, load this emulator with 
+//the data to reset the game state to the provide snapshot
+void Emulator8080::LoadSnapshot(std::unique_ptr<Snapshot> snapshot)
+{
+	state.loadState(std::move(snapshot->state->clone()));
+	memory->flashROM(snapshot->memoryData.data(), snapshot->memoryData.size(), 0);
 }

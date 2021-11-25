@@ -162,11 +162,11 @@
     <ClInclude Include="..\..\memory.hpp" />
     <ClInclude Include="..\..\platformAdapter.hpp" />
     <ClInclude Include="..\..\processor.hpp" />
+    <ClInclude Include="..\..\snapshot.h" />
     <ClInclude Include="..\..\soundDevice\sound-test\sound-test\soundDevice.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="resource1.h" />
-    <ClInclude Include="snapshot.h" />
     <ClInclude Include="SpaceInvaders.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
@@ -175,8 +175,8 @@
     <ClCompile Include="..\..\machine.cpp" />
     <ClCompile Include="..\..\memory.cpp" />
     <ClCompile Include="..\..\platformAdapter.cpp" />
+    <ClCompile Include="..\..\snapshot.cpp" />
     <ClCompile Include="..\..\soundDevice\sound-test\sound-test\soundDevice.cpp" />
-    <ClCompile Include="snapshot.cpp" />
     <ClCompile Include="SpaceInvaders.cpp" />
   </ItemGroup>
   <ItemGroup>
