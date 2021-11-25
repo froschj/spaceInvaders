@@ -10,7 +10,6 @@
 #include <stdexcept>
 #include "snapshot.h"
 
-
 // Build an Emulator8080 with no memory attached
 Emulator8080::Emulator8080() {
     this->memory = nullptr;
@@ -19,6 +18,7 @@ Emulator8080::Emulator8080() {
     this->enableInterrupts = false;
     this->outputCallback = nullptr;
     this->inputCallback = nullptr;
+    this->halted = false;
 }
 
 // Build an emulator with attached memory device
@@ -29,6 +29,7 @@ Emulator8080::Emulator8080(Memory *memoryDevice) {
     this->enableInterrupts = false;
     this->outputCallback = nullptr;
     this->inputCallback = nullptr;
+    this->halted = false;
 }
 
 // connect a callback for the OUT instruction
@@ -51,18 +52,23 @@ Emulator8080::~Emulator8080() {
 }
 
 // set the processor to a certain memory address for execution
+// this will set the next instruction to be executed
 void Emulator8080::reset(uint16_t address) {
     this->state.pc = address;
 }
 
 // fetch, decode, and execute a single instruction
 int Emulator8080::step() {
-    // fetch
-    uint8_t opcodeWord = fetch(state.pc);
-    // decode
-    auto opcodeFunction = decode(opcodeWord);
-    // execute
-    return opcodeFunction();
+    if (!halted) {
+        // fetch
+        uint8_t opcodeWord = fetch(state.pc);
+        // decode
+        auto opcodeFunction = decode(opcodeWord);
+        // execute
+        return opcodeFunction();
+    } else {
+        return 0;
+    }
 }
 
 // read an opcode in from memory
@@ -81,6 +87,7 @@ uint8_t Emulator8080::fetch(uint16_t address) {
 }
 
 // obtain host machine code corresponding to an opcode
+// returns a callable that will emulate an 8080 instruction
 std::function<int(void)> Emulator8080::decode(uint8_t word) {
     try {
         return opcodes.at(word);
@@ -101,11 +108,14 @@ std::function<int(void)> Emulator8080::decode(uint8_t word) {
     }
 }
 
+
+// No OPeration, called from opcode lambdas
 int Emulator8080::nop() {
-    ++this->state.pc; // do nothin but advance pc
+    ++this->state.pc; // do nothing, but advance pc
     return 4;
 }
 
+// JuMP, set the next instruction based on memory. called from opcode lambdas
 int Emulator8080::jmp() {
     uint16_t jumpAddress = 
         this->readAddressFromMemory(this->state.pc + 1); 
@@ -113,6 +123,8 @@ int Emulator8080::jmp() {
     return 10; 
 }
 
+// RETurn, recume excecution from stored address after a CALL is done.
+// called from opcode lambdas
 int Emulator8080::ret() {
     uint16_t jumpAddress = this->readAddressFromMemory(this->state.sp);
     this->state.sp += 2; 
@@ -120,12 +132,16 @@ int Emulator8080::ret() {
     return 10; 
 }
 
+// CALL, save a return address and move to a new point of execution
+// caled from opcode lambdas
 int Emulator8080::call() {
     // read destination address do call actions
     this->callAddress(this->readAddressFromMemory(this->state.pc + 1));
     return 17; 
 }
 
+// create an array as an opcode lookup table. Associates a lambda function
+// with each 8080 opcode
 void Emulator8080::buildMap() {
     // NOP (0x00): 
     // 4 cycles, 1 byte
@@ -139,6 +155,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.at(0x01) = 
         [this](){
+            // load an immediate value from program memory to BC
             this->state.b = this->memory->read(this->state.pc + 2);
             this->state.c = this->memory->read(this->state.pc + 1); 
             this->state.pc += 3;
@@ -149,6 +166,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.at(0x02) =  
         [this](){ 
+            // store accumulator value in memory address stored in BC
             this->memory->write(this->state.a, this->getBC());
             ++this->state.pc;
             return 7; 
@@ -158,6 +176,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.at(0x03) =  
         [this](){
+            // increment 16-bit value in BC
             uint16_t temp = this->getBC();
             ++temp;
             this->state.b = static_cast<uint8_t>((temp & 0xff00) >> 8);
@@ -170,7 +189,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, AC
     opcodes.at(0x04) =  
         [this](){
-            // increments and sets flags
+            // increment value in B register and sets flags
             this->state.b = this->incrementValue(this->state.b);
             ++this->state.pc;
             return 5;
@@ -190,6 +209,7 @@ void Emulator8080::buildMap() {
     // no flags
     opcodes.at(0x06) = 
         [this](){ 
+            // load an immediate byte into B
             this->state.b = this->memory->read(this->state.pc + 1);
             this->state.pc +=2;
             return 7; 
@@ -198,22 +218,21 @@ void Emulator8080::buildMap() {
     // 4 cycles, 1 byte
     // CY
     opcodes.at(0x07) = 
-        [this](){ 
-            //std::cout << std::hex << this->state.a << std::endl;
-            //std::cout << this->state.isFlag(State8080::CY) << std::endl;
+        [this](){
+            // Rotate accumulator left 
             uint16_t shiftRegister = static_cast<uint16_t>(this->state.a);
             shiftRegister = shiftRegister << 1;
             if (shiftRegister & 0x0100) {
+                // set bit 0 and the carry flag based on bit 8
                 this->state.setFlag(State8080::CY);
                 ++shiftRegister;
             } else {
                 this->state.unSetFlag(State8080::CY);
             }
+            // mask off the high bytes
             shiftRegister &= 0x00ff;
             
-            this->state.a = static_cast<uint8_t>(shiftRegister);
-            //std::cout << std::hex <<this->state.a << std::endl;
-            //std::cout << this->state.isFlag(State8080::CY) << std::endl;            
+            this->state.a = static_cast<uint8_t>(shiftRegister);           
             ++this->state.pc;
             return 4; 
         };
@@ -288,10 +307,15 @@ void Emulator8080::buildMap() {
     // CY
     opcodes.at(0x0f) = 
         [this](){
+            // rotate accumulator right
+            // store the low bit to wrap it arround
             uint8_t carry = this->state.a & 0x01;
             this->state.a = (this->state.a & 0xfe) >> 1;
+            // wrap the low bit arround
             carry = carry << 7;
             this->state.a += carry;
+
+            // determine the state of the C[arr]Y flag
             if (this->state.a & 0x80) {
                 this->state.setFlag(State8080::CY);
             } else {
@@ -370,6 +394,8 @@ void Emulator8080::buildMap() {
     // CY
     opcodes.at(0x17) =  
         [this](){ 
+            // rotate accumulator left through carry
+            // treat accumulator and C[arr]Y bit like a 9-bit value
             uint16_t shiftRegister = static_cast<uint16_t>(this->state.a);
             shiftRegister = shiftRegister << 1;
             if (this->state.isFlag(State8080::CY)) ++shiftRegister;
@@ -453,6 +479,8 @@ void Emulator8080::buildMap() {
     // CY
     opcodes.at(0x1f) =  
         [this](){
+            // rotate accumulator right through carry
+            // treat accumulator and C[arr]Y bit like a 9-bit value
             uint8_t carry = this->state.a & 0x01;
             this->state.a = (this->state.a & 0xfe) >> 1;
             if (this->state.isFlag(State8080::CY)) this->state.a += 0x80;
@@ -536,41 +564,43 @@ void Emulator8080::buildMap() {
     // 4 cycles, 1 byte
     // Z, S, P, AC, CY
     opcodes.at(0x27) = 
-        [this](){ 
+        [this](){
+			// capture the nibbles independently
             uint8_t lowNibble = this->state.a & 0x0f;
-            // add 6 to the low nibble if it is more than 9
-            // or if the AC flag is set
-            // set the AC flag based on this action
-            if (
-                (lowNibble > 0x09)
-                || this->state.isFlag(State8080::AC)
-            ) {
-                lowNibble += 0x06;
-                if (lowNibble & 0x10) {
-                    this->state.setFlag(State8080::AC);
-                } else {
-                    this->state.unSetFlag(State8080::AC);
-                }
-            }
-            lowNibble &= 0x0f;
-            uint8_t highNibble = (this->state.a & 0xf0) >> 4;
-            if (this->state.isFlag(State8080::AC)) ++highNibble;
-            // add 6 to the high nibble if it is more than 9
-            // or if the CY flag is set
-            // set the CY flag based on the outcome
-            if (
-                (highNibble > 0x09)
-                || this->state.isFlag(State8080::CY)
-            ) {
-                highNibble += 0x06;
-                if (highNibble & 0x10) {
-                    this->state.setFlag(State8080::CY);
-                } else {
-                    this->state.unSetFlag(State8080::CY);
-                }
-            }
-            highNibble = (highNibble & 0x0f) << 4;
-            this->state.a = highNibble + lowNibble;
+			uint8_t highNibble = this->state.a & 0xf0;
+
+			// initialize the adjustment to be applied to convert to BCD
+			uint8_t adjustment = 0x00;
+			bool carry = false;
+
+			// determine low byte of adjustment
+			// add 6 to low nibble on Auxiliary Carry or if too big for 
+			// a decimal digit
+			if ((lowNibble > 0x09) || this->state.isFlag(State8080::AC)) {
+				adjustment |= 0x06;
+			}
+
+			// determine high byte of adjustment
+			// add 6 to high nibble on Carry, or if the high nibble will be 
+			// too large for a decimal digit
+			if (
+				(highNibble > 0x90)
+				|| ((highNibble == 0x90) && (lowNibble > 0x09))
+				|| this->state.isFlag(State8080::CY)
+			) {
+				adjustment |= 0x60;
+				// flag to manually set carry flag later, result of add
+				// may not capture in some cases
+				carry = true;
+			}
+
+			// adjust to BCD
+			this->state.a = this->addWithAccumulator(adjustment);
+
+			// adjust the carry flag if needed
+			if (carry) this->state.setFlag(State8080::CY);
+			
+			// increment pc and return cycles
             ++this->state.pc;
             return 4; 
         };
@@ -731,7 +761,7 @@ void Emulator8080::buildMap() {
     // 4 cycles, 1 byte
     // CY
     opcodes.at(0x37) =  
-        [this](){ 
+        [this](){
             this->state.setFlag(State8080::CY);
             ++this->state.pc;
             return 4; 
@@ -952,12 +982,12 @@ void Emulator8080::buildMap() {
             ++this->state.pc;
             return 5; 
         };
-    // MOV D,C (0x50) D <- C:
+    // MOV D,B (0x50) D <- B:
     // 5 cycles, 1 byte
     // no flags
     opcodes.at(0x50) =  
         [this](){
-            this->state.d = this->state.c;
+            this->state.d = this->state.b;
             ++this->state.pc;
             return 5; 
         };
@@ -1294,11 +1324,14 @@ void Emulator8080::buildMap() {
             ++this->state.pc;
             return 7; 
         }; 
-	// HLT (0x76) not implemented - do nothing
+	// HLT (0x76) special
+    // 7 cycles, 1 byte
+    // no flags
 	opcodes.at(0x76) = 
 		[this]() {
-			throw std::out_of_range("HLT");
-            return 0;
+            this->halted = true;
+            ++ this->state.pc;
+            return 7;
         };
     // MOV M,A (0x77) (HL) <- A:
     // 7 cycles, 1 byte
@@ -1916,7 +1949,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xb8) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.b //subtrahend
@@ -1929,7 +1962,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xb9) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.c //subtrahend
@@ -1942,7 +1975,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xba) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.d //subtrahend
@@ -1955,7 +1988,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xbb) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.e //subtrahend
@@ -1968,7 +2001,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xbc) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.h //subtrahend
@@ -1981,7 +2014,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xbd) = 
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.l //subtrahend
@@ -1994,7 +2027,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xbe) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->memory->read(this->getHL()) //subtrahend
@@ -2007,7 +2040,7 @@ void Emulator8080::buildMap() {
     // Z, S, P, CY, AC
     opcodes.at(0xbf) =  
         [this](){
-            // diregard return value, we only need flags set for CPI
+            // diregard return value, we only need flags set for CMP
             this->subtractValues(
                 this->state.a, // minuend
                 this->state.a //subtrahend
@@ -2733,6 +2766,7 @@ void Emulator8080::buildMap() {
 }
 
 // read an address stored starting at atAddress
+// accounts for little-endian storage model
 uint16_t Emulator8080::readAddressFromMemory(uint16_t atAddress) {
     uint16_t lsb = this->memory->read(atAddress);
     uint16_t msb = this->memory->read(atAddress + 1) << 8;
@@ -2740,8 +2774,11 @@ uint16_t Emulator8080::readAddressFromMemory(uint16_t atAddress) {
 }
 
 // set up return address on stack and set jump address
+// pushes the current address on the stack, then sets the program counter to
+// an argument, address. isReset governs which address is pushed->
+// false, pc = next instruction; true, pc = current instruction
 void Emulator8080::callAddress(uint16_t address, bool isReset) {
-    // advance pc to next instruction
+    // advance pc to next instruction if this is not a RST
     if (!isReset) {
         this->state.pc += 3;
     }
@@ -2782,7 +2819,7 @@ uint16_t Emulator8080::getHL() {
     return msb + lsb;
 }
 
-// determine state of Z flag
+// determine state of Z[ero] flag
 void Emulator8080::updateZeroFlag(uint8_t value) {
     if ( value == 0x00 ) { // compare to zero
         this->state.setFlag(State8080::Z);
@@ -2791,7 +2828,7 @@ void Emulator8080::updateZeroFlag(uint8_t value) {
     }
 }
 
-// determine state of S flag
+// determine state of S[ign] flag
 void Emulator8080::updateSignFlag(uint8_t value) {
     if ( value & 0x80 ) { // 0b1000'0000
         this->state.setFlag(State8080::S);
@@ -2800,9 +2837,9 @@ void Emulator8080::updateSignFlag(uint8_t value) {
     }
 }
 
-// determine state of S flag
+// determine state of P[arity] flag
 void Emulator8080::updateParityFlag(uint8_t value) {
-    // https://www.freecodecamp.org/news/algorithmic-problem-solving-efficiently-computing-the-parity-of-a-stream-of-numbers-cd652af14643/
+    // parity algorithm: https://www.freecodecamp.org/news/algorithmic-problem-solving-efficiently-computing-the-parity-of-a-stream-of-numbers-cd652af14643/
     value ^= value >> 4;
     value ^= value >> 2;
     value ^= value >> 1;
@@ -2815,37 +2852,41 @@ void Emulator8080::updateParityFlag(uint8_t value) {
 
 // decrement a value, set Z S P AC flags
 uint8_t Emulator8080::decrementValue(uint8_t value) {
-    //check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
-    if (((value & 0x0f) - 1) > 0x0f) {
-        this->state.setFlag(State8080::AC);
-    } else {
-        this->state.unSetFlag(State8080::AC);
-    }
+	// AC flag set based on low nibble add, (-1) is 0b1111 2's complement
+	// therefore AC will be set (carry out of low nibble) unless low nibble
+	// of operand is 0b0000
+	if ((value & 0x0f) != 0x00) {
+		this->state.setFlag(State8080::AC);
+	}
+	else {
+		this->state.unSetFlag(State8080::AC);
+	}
     --value; 
     // set flags based on result of operation
     this->updateZeroFlag(value);
     this->updateSignFlag(value);
     this->updateParityFlag(value);
 
-    this->state.unSetFlag(State8080::AC);
+    //this->state.unSetFlag(State8080::AC);
     return value; // return the decremented value
 }
 
-// decrement a value, set Z S P AC flags
+// increment a value, set Z S P AC flags
 uint8_t Emulator8080::incrementValue(uint8_t value) {
-    //check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
-    if (((value & 0x0f) + 1) > 0x0f) {
-        this->state.setFlag(State8080::AC);
-    } else {
-        this->state.unSetFlag(State8080::AC);
-    }
+    // only operand low nibble of 0b1111 will result in carry out from low nibble
+	// from adding 0b0001
+	if ((value & 0x0f) == 0x0f) {
+		this->state.setFlag(State8080::AC);
+	} else {
+		this->state.unSetFlag(State8080::AC);
+	}
     ++value; 
     // set flags based on result of operation
     this->updateZeroFlag(value);
     this->updateSignFlag(value);
     this->updateParityFlag(value);
 
-    this->state.unSetFlag(State8080::AC);
+    //this->state.unSetFlag(State8080::AC);
     return value; // return the decremented value
 }
 
@@ -2858,8 +2899,9 @@ uint8_t Emulator8080::subtractValues(
     uint8_t carryBit = 0;
     if (withCarry && this->state.isFlag(State8080::CY)) carryBit = 1;
 
-    //check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
-    if (((minuend & 0x0f) - (subtrahend & 0x0f) - carryBit) & 0xf0) {
+    // check aux carry (https://www.reddit.com/r/EmuDev/comments/p8b4ou/8080_decrement_sub_wrappingzero_question/)
+    // do operation on low nibble, see if something propagated to the high
+    if (!(((minuend & 0x0f) - (subtrahend & 0x0f) - carryBit) & 0xf0)) {
         this->state.setFlag(State8080::AC);
     } else {
         this->state.unSetFlag(State8080::AC);
@@ -2874,7 +2916,7 @@ uint8_t Emulator8080::subtractValues(
     this->updateParityFlag(difference);
 
     // AC flag only set for addition
-    this->state.unSetFlag(State8080::AC);
+    //this->state.unSetFlag(State8080::AC);
 
     // determine state of carry flag
     if (result & 0x0100) { //0b0000'0001'0000'0000 mask
@@ -2885,7 +2927,6 @@ uint8_t Emulator8080::subtractValues(
 
     return difference;
 }
-
 
 // add a 2-byte addend to HL and store the result in HL
 // set the CY flag if necessary
@@ -2997,10 +3038,14 @@ int Emulator8080::processInterrupt(
     if (!(this->enableInterrupts)) return 0;
     std::vector<uint8_t> interruptBytes = instructionBytes;
 
+    // interrupts clear the halt state
+    this->halted = false;
+
     if (interruptBytes.size() == 1) {
         auto interruptFunction = this->decode(interruptBytes.at(0));
         this->enableInterrupts = false;
         return interruptFunction();
+    //in the future, we can add multi-byte support here
     } else {
         // handle bad instruction bytes
         std::stringstream badOpcode;
@@ -3015,6 +3060,7 @@ int Emulator8080::processInterrupt(
 // request an interrupt. Accepts a one-byte 8080 opcode
 // returns the number of CPU clock cycles to process the interrupt
 int Emulator8080::requestInterrupt(uint8_t opcode) {
+    // filter so we only allow 1-byte instructions
     if (
         ((opcode >= 0x3f) && (opcode <= 0xc1))
         || (((0xf & opcode) == 0x0) && ((opcode == 0x00) || (opcode > 0x3f)))

@@ -16,12 +16,30 @@
 #include <initializer_list>
 
 /*
- * State for the 8080 Disassembler. This only needs a pc register, since it 
- * will print to an ostream instead of execting instructions
+ * State for the 8080 Emulator. 
+ * Internally maintains the registers of an 8080 processor.
+ * 
+ * Public Interface:
+ * a, b, c, d, e, h, l, pc, sp, are all publicly accessible data members.
+ * these represent registers and are uint8_t.
+ * 
+ * State8080::flag defines symbols to represent the different flags:
+ * S,Z,AC,P,CY [Sign, Zero, Auxiliary Carry, Parity, CarrY]
+ * 
+ * getFlags() returns a uint8_t representing the current flags state
+ * loadFlags(uint8_t) replaces the flags byte with a supplient uint8_t
+ * isFlag(State8080::flag) tests a flag (true=set, false=unset)
+ * setFlag(State8080::flag) sets a flag to 1/true
+ * unSetFlag(State8080::flag) unsets a flag to 0/false
+ * complementFlag(State8080::flag) flips the value of a flag
+ * 
+ * clone() reurns a unique_ptr to a copy of the current state
  */
 struct State8080 : State {
     private:
         virtual struct State8080* doClone() const {
+            // a allocate a new State8080 on the heap
+            // this is a private method to allow States to be polymorphic
             struct State8080*temp = new struct State8080;
             temp->a = this->a;
             temp->b = this->b;
@@ -35,6 +53,7 @@ struct State8080 : State {
             temp->flagsRegister = this->flagsRegister;
             return temp;
         }
+        // bitmasks for teh different flags based on their storage in a byte
         const uint8_t flagMasks[5] = {
             0b1000'0000,    // S
             0b0100'0000,    // Z
@@ -42,12 +61,19 @@ struct State8080 : State {
             0b0000'0100,    // P
             0b0000'0001     // CY
         };
+
+        // bit [5] is always 0; bit [1] is always 1
         uint8_t flagsRegister = 0b0000'0010;
     public:
+        // meaningful names to work with flags
         enum flag {S,Z,AC,P,CY};
+        // public clone interface, converts the private raw pointer into 
+        // a unique_ptr, transferring ownership of the copy to the caller
         std::unique_ptr<struct State8080> clone() const {
             return std::unique_ptr<struct State8080>(doClone());
         }
+
+        // cpu registers
         uint8_t     a;    
         uint8_t     b;    
         uint8_t     c;    
@@ -57,35 +83,45 @@ struct State8080 : State {
         uint8_t     l;    
         uint16_t    sp;
         uint16_t    pc;
+
+        // access the flags
         uint8_t     getFlags() { return flagsRegister; }
+
+        // restore flags from a byte
         void        loadFlags(uint8_t flagByte) {
             flagsRegister = flagByte;
             // make sure constant bits are correct
+            // bit [5] is always 0; bit [1] is always 1
             flagsRegister &= 0b1101'0111;
             flagsRegister |= 0b0000'0010;
-        }		
-		void loadState(std::unique_ptr<struct State8080> newState)
-		{
-			this->a = newState->a;
-			this->b = newState->b;
-			this->c = newState->c;
-			this->d = newState->d;
-			this->e = newState->e;
-			this->h = newState->h;
-			this->l = newState->l;
-			this->sp = newState->sp;
-			this->pc = newState->pc;
-			this->loadFlags(newState->getFlags());
-		}
+
+        // load a state
+        void loadState(std::unique_ptr<struct State8080> newState) {
+            this->a = newState->a;
+            this->b = newState->b;
+            this->c = newState->c;
+            this->d = newState->d;
+            this->e = newState->e;
+            this->h = newState->h;
+            this->l = newState->l;
+            this->sp = newState->sp;
+            this->pc = newState->pc;
+            this->loadFlags(newState->getFlags());
+        }
+  
+        // return the state of a flag
         bool isFlag(State8080::flag whichFlag) {
             return static_cast<bool>(flagsRegister & flagMasks[whichFlag]);
         }
+        // flag is true
         void setFlag(State8080::flag whichFlag) {
             flagsRegister |= flagMasks[whichFlag];
         }
+        // flag is false
         void unSetFlag(State8080::flag whichFlag) {
             flagsRegister &= ~flagMasks[whichFlag];
         }
+        // flag is !flag
         void complementFlag(State8080::flag whichFlag){
             flagsRegister ^= flagMasks[whichFlag];
         }
@@ -175,7 +211,10 @@ class Emulator8080 :
 
         // encapusulate call procedures
         void callAddress(uint16_t address, bool isReset = false);
+
+        // processor status
         bool enableInterrupts;
+        bool halted;
 
         // trigger an interrupt
         // accepts an initializer list of bytes representing an 8080 instruction
@@ -192,7 +231,7 @@ class Emulator8080 :
 
 /*
  * A meaningful exception to throw if the "processor" encounters an
- * unknown or unimplemented opcode
+ * interrupt that cannot be processed
  */
 class UnimplementedInterruptError : public std::exception {
     private:
