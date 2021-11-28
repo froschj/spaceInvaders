@@ -19,6 +19,7 @@ and advance the machine emulator every frame.
 #include "soundDevice.h"
 #include "snapshot.h"
 #include <chrono>
+#include <synchapi.h>
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -193,6 +194,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (!g_paused)
 		{
 			machine.step();
+		}
+		else
+		{
+			Sleep(33);
 		}
 		
 	}
