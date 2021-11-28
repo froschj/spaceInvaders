@@ -88,12 +88,13 @@ struct State8080 : State {
         uint8_t     getFlags() { return flagsRegister; }
 
         // restore flags from a byte
-        void        loadFlags(uint8_t flagByte) {
-            flagsRegister = flagByte;
-            // make sure constant bits are correct
-            // bit [5] is always 0; bit [1] is always 1
-            flagsRegister &= 0b1101'0111;
-            flagsRegister |= 0b0000'0010;
+		void        loadFlags(uint8_t flagByte) {
+			flagsRegister = flagByte;
+			// make sure constant bits are correct
+			// bit [5] is always 0; bit [1] is always 1
+			flagsRegister &= 0b1101'0111;
+			flagsRegister |= 0b0000'0010;
+		}
 
         // load a state
         void loadState(std::unique_ptr<struct State8080> newState) {
