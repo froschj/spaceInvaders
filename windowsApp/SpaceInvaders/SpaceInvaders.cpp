@@ -114,7 +114,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	//Connect machine and platform sound output
+#ifdef _DEBUG
 	soundPlayer = std::make_unique<InvaderSoundDevice>("..\\..\\sounds\\");
+#else
+	soundPlayer = std::make_unique<InvaderSoundDevice>(".\\sounds\\");
+#endif
 	platformAdapter.setShootFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::SHOT); });
 	platformAdapter.setPlayerDieSoundFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::PLAYER_DEATH); });
 	platformAdapter.setInvaderDieFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::INVADER_DEATH); });
