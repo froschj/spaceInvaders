@@ -114,11 +114,24 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	//Connect machine and platform sound output
+	//https://stackoverflow.com/questions/6218325/how-do-you-check-if-a-directory-exists-on-windows-in-c
+	DWORD dwAttrib = GetFileAttributes(_T(".\\sounds\\"));
+
+	if (dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY))
+	{
+		soundPlayer = std::make_unique<InvaderSoundDevice>(".\\sounds\\");		
+	}
+	else
+	{
+		soundPlayer = std::make_unique<InvaderSoundDevice>("..\\..\\sounds\\");
+	}
+/*
 #ifdef _DEBUG
 	soundPlayer = std::make_unique<InvaderSoundDevice>("..\\..\\sounds\\");
 #else
 	soundPlayer = std::make_unique<InvaderSoundDevice>(".\\sounds\\");
 #endif
+*/
 	platformAdapter.setShootFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::SHOT); });
 	platformAdapter.setPlayerDieSoundFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::PLAYER_DEATH); });
 	platformAdapter.setInvaderDieFunction([]() {soundPlayer->playSound(InvaderSoundDevice::sfx::INVADER_DEATH); });
