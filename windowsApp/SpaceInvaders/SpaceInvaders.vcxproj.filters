@@ -48,6 +48,9 @@
     <ClInclude Include="..\..\soundDevice\sound-test\sound-test\soundDevice.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\snapshot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SpaceInvaders.cpp">
@@ -66,6 +69,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\soundDevice\sound-test\sound-test\soundDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\snapshot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

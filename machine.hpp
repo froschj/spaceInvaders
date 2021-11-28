@@ -1,3 +1,7 @@
+/*
+CS467 - Build an emulator and run space invaders rom
+Jon Frosch & Phil Sheets
+*/
 #include <cstdint>
 #include <chrono>
 

@@ -15,7 +15,6 @@
 #include <functional>
 #include <initializer_list>
 
-
 /*
  * State for the 8080 Emulator. 
  * Internally maintains the registers of an 8080 processor.
@@ -89,14 +88,28 @@ struct State8080 : State {
         uint8_t     getFlags() { return flagsRegister; }
 
         // restore flags from a byte
-        void        loadFlags(uint8_t flagByte) {
-            flagsRegister = flagByte;
-            // make sure constant bits are correct
-            // bit [5] is always 0; bit [1] is always 1
-            flagsRegister &= 0b1101'0111;
-            flagsRegister |= 0b0000'0010;
-        }
+		void        loadFlags(uint8_t flagByte) {
+			flagsRegister = flagByte;
+			// make sure constant bits are correct
+			// bit [5] is always 0; bit [1] is always 1
+			flagsRegister &= 0b1101'0111;
+			flagsRegister |= 0b0000'0010;
+		}
 
+        // load a state
+        void loadState(std::unique_ptr<struct State8080> newState) {
+            this->a = newState->a;
+            this->b = newState->b;
+            this->c = newState->c;
+            this->d = newState->d;
+            this->e = newState->e;
+            this->h = newState->h;
+            this->l = newState->l;
+            this->sp = newState->sp;
+            this->pc = newState->pc;
+            this->loadFlags(newState->getFlags());
+        }
+  
         // return the state of a flag
         bool isFlag(State8080::flag whichFlag) {
             return static_cast<bool>(flagsRegister & flagMasks[whichFlag]);
@@ -145,8 +158,10 @@ class Emulator8080 :
         // request an interrupt. Accepts a one-byte 8080 opcode
         // returns the number of CPU clock cycles to process the interrupt
         int requestInterrupt(uint8_t opcode);
-
-
+				
+		std::unique_ptr<class Snapshot> TakeSnapshot();
+		void LoadSnapshot(std::unique_ptr<class Snapshot> snapshot);
+		
     private:
         // fetch instruction at address
         uint8_t fetch(uint16_t address);

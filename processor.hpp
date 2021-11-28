@@ -67,7 +67,7 @@ struct State {
 };
 
 /*
- * Generic Porcessor class
+ * Generic Processor class
  */
 template<class stateType, class memoryType>
 class Processor {
@@ -81,7 +81,7 @@ class Processor {
         } // return a copy of the current state
         virtual void connectMemory(memoryType *memoryDevice) {
             memory = memoryDevice;
-        }; // connect the processor to a memory
+        } // connect the processor to a memory
     protected:
         stateType state;
         memoryType *memory;
